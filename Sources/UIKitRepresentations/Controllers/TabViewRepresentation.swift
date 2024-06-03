@@ -5,7 +5,7 @@ import RepresentationUtils
     public static func buildBlock(_ components: any View...) -> [OSViewController] {
         components.map({ comp in
             let c = OSHostingController(rootView: AnyView(comp))
-            c.view.layer?.backgroundColor = .clear
+            c.view.backgroundColor = .clear
             return c
         })
     }
@@ -45,7 +45,6 @@ extension TabViewRepresentation: UIViewControllerRepresentable {
         let c = UITabBarController()
         c.view.backgroundColor = .clear
         c.setViewControllers(tabs, animated: false)
-        sync(ctrl: c)
         c.tabBar.isHidden = true
         return c
     }

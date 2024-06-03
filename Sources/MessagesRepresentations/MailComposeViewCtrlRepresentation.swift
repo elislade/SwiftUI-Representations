@@ -1,6 +1,6 @@
 import SwiftUI
 
-#if canImport(MessagesUI)
+#if canImport(UIKit)
 import MessageUI
 
 public struct MailComposeViewCtrlRepresentation {

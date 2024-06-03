@@ -12,7 +12,7 @@ public struct ActivityIndicatorViewRepresentation {
 extension ActivityIndicatorViewRepresentation: UIViewRepresentable {
     
     public func makeUIView(context: Context) -> UIActivityIndicatorView {
-        let view = UIActivityIndicatorView(style: style)
+        let view = UIActivityIndicatorView()
         view.startAnimating()
         return view
     }

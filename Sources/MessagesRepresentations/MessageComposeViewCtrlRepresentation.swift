@@ -1,6 +1,6 @@
 import SwiftUI
 
-#if canImport(MessageUI)
+#if canImport(UIKit)
 import MessageUI
 
 public struct MessageComposeViewCtrlRepresentation {
