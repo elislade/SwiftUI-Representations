@@ -1,15 +1,6 @@
 import SwiftUI
 import RepresentationUtils
 
-@resultBuilder public struct ViewControllerBuilder {
-    public static func buildBlock(_ components: any View...) -> [OSViewController] {
-        components.map({ comp in
-            let c = OSHostingController(rootView: AnyView(comp))
-            c.view.backgroundColor = .clear
-            return c
-        })
-    }
-}
 
 public struct TabViewRepresentation {
     
@@ -39,14 +30,65 @@ public struct TabViewRepresentation {
 
 #if canImport(UIKit)
 
+public final class CustomTabBarController: UIViewController {
+    
+    public override var childForStatusBarStyle: UIViewController? { nil }
+    
+    public override func setNeedsStatusBarAppearanceUpdate() { }
+    
+    public var selectedIndex: Int = 0 {
+        willSet { newValue
+            guard
+                newValue != selectedIndex,
+                children.indices.contains(newValue),
+                children.indices.contains(selectedIndex)
+            else { return }
+            
+            transition(
+                from: children[selectedIndex],
+                to: children[newValue],
+                duration: 0,
+                animations: nil
+            )
+        }
+    }
+    
+    public override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        guard children.indices.contains(selectedIndex) else { return }
+        children[selectedIndex].view.frame = view.bounds
+    }
+    
+    public override func viewDidLoad() {
+        guard children.indices.contains(selectedIndex) else { return }
+        view.addSubview(children[selectedIndex].view)
+        children[selectedIndex].didMove(toParent: self)
+    }
+    
+}
+
+//extension TabViewRepresentation: UIViewControllerRepresentable {
+//    
+//    public func makeUIViewController(context: Context) -> CustomTabBarController {
+//        let ctrl = CustomTabBarController()
+//        for tab in tabs { ctrl.addChild(tab) }
+//        return ctrl
+//    }
+//    
+//    public func updateUIViewController(_ uiViewController:CustomTabBarController, context: Context) {
+//        uiViewController.selectedIndex = index
+//    }
+//    
+//}
+
 extension TabViewRepresentation: UIViewControllerRepresentable {
     
     public func makeUIViewController(context: Context) -> UITabBarController {
-        let c = UITabBarController()
-        c.view.backgroundColor = .clear
-        c.setViewControllers(tabs, animated: false)
-        c.tabBar.isHidden = true
-        return c
+        let ctrl = UITabBarController()
+        ctrl.view.backgroundColor = .clear
+        ctrl.setViewControllers(tabs, animated: false)
+        ctrl.tabBar.isHidden = true
+        return ctrl
     }
     
     public func updateUIViewController(_ uiViewController: UITabBarController, context: Context) {
@@ -57,56 +99,65 @@ extension TabViewRepresentation: UIViewControllerRepresentable {
 
 #elseif canImport(AppKit)
 
+public final class CustomTabBarController: NSViewController {
+    
+    public var selectedIndex: Int = 0 {
+        willSet { newValue
+            guard
+                newValue != selectedIndex,
+                children.indices.contains(selectedIndex),
+                children.indices.contains(newValue)
+            else { return }
+            
+            transition(
+                from: children[selectedIndex],
+                to: children[newValue]
+            )
+        }
+    }
+    
+    public override func viewWillLayout() {
+        guard children.indices.contains(selectedIndex) else { return }
+        children[selectedIndex].view.frame = view.bounds
+    }
+    
+    public override func viewDidLoad() {
+        guard children.indices.contains(selectedIndex) else { return }
+        view.addSubview(children[selectedIndex].view)
+    }
+    
+}
+
 extension TabViewRepresentation: NSViewControllerRepresentable {
     
-    public func makeNSViewController(context: Context) -> NSTabViewController {
-        let c = NSTabViewController()
-        c.tabStyle = .unspecified
-        c.view.backgroundColor = .clear
-        for tab in tabs {
-            c.addChild(tab)
-        }
-        for item in c.tabViewItems {
-            item.view?.isHidden = true
-        }
-        return c
+    public func makeNSViewController(context: Context) -> CustomTabBarController {
+        let ctrl = CustomTabBarController()
+        for tab in tabs { ctrl.addChild(tab) }
+        return ctrl
     }
     
-    public func updateNSViewController(_ nsViewController: NSTabViewController, context: Context) {
-        nsViewController.selectedTabViewItemIndex = index
+    public func updateNSViewController(_ nsViewController: CustomTabBarController, context: Context) {
+        nsViewController.selectedIndex = index
     }
     
 }
+
+//extension TabViewRepresentation: NSViewControllerRepresentable {
+//    
+//    public func makeNSViewController(context: Context) -> NSTabViewController {
+//        let c = NSTabViewController()
+//        c.tabStyle = .unspecified
+//        for tab in tabs {
+//            tab.removeFromParent()
+//            c.addChild(tab)
+//        }
+//        return c
+//    }
+//    
+//    public func updateNSViewController(_ nsViewController: NSTabViewController, context: Context) {
+//        nsViewController.selectedTabViewItemIndex = index
+//    }
+//    
+//}
 
 #endif
-
-fileprivate struct TestView: View {
-    @State private var index = 0
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            TabViewRepresentation(index: index){
-                ScrollView{
-                    LinearGradient(colors: [.red, .blue], startPoint: .top, endPoint: .bottom)
-                        .frame(height: 1300)
-                }
-                
-                ScrollView{
-                    LinearGradient(colors: [.green, .blue], startPoint: .top, endPoint: .bottom)
-                        .frame(height: 1300)
-                        .frame(height: 1300)
-                }
-            }.edgesIgnoringSafeArea(.all)
-            
-            Divider()
-            
-            Button(action: { index = index == 1 ? 0 : 1 }){
-                Text("Toggle").padding()
-            }
-        }
-    }
-}
-
-#Preview {
-    TestView()
-}

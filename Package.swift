@@ -5,8 +5,12 @@ import PackageDescription
 
 let package = Package(
     name: "SwiftUIRepresentations",
-    platforms: [.iOS(.v13), .macOS(.v11), .tvOS(.v12), .watchOS(.v4)],
+    platforms: [.iOS(.v14), .macOS(.v11), .tvOS(.v12), .watchOS(.v4)],
     products: [
+        .library(
+            name: "ExampleRepresentations",
+            targets: ["ExampleRepresentations"]
+        ),
         .library(
             name: "RepresentationUtils",
             targets: ["RepresentationUtils"]
@@ -36,15 +40,41 @@ let package = Package(
             targets: ["PhotosRepresentations"]
         ),
         .library(
-            name: "PDFRepresentations",
-            targets: ["PDFRepresentations"]
+            name: "PDFKitRepresentations",
+            targets: ["PDFKitRepresentations"]
         ),
         .library(
             name: "AVKitRepresentations",
             targets: ["AVKitRepresentations"]
         ),
+        .library(
+            name: "SceneKitRepresentations",
+            targets: ["SceneKitRepresentations"]
+        ),
+        .library(
+            name: "MapKitRepresentations",
+            targets: ["MapKitRepresentations"]
+        ),
+        .library(
+            name: "WebKitRepresentations",
+            targets: ["WebKitRepresentations"]
+        ),
+        .library(
+            name: "HostedCollectionRepresentation",
+            targets: ["HostedCollectionRepresentation"]
+        )
     ],
     targets: [
+        .target(
+            name: "ExampleRepresentations",
+            dependencies: [
+                "RepresentationUtils", "QuickLookRepresentations", "PhotosRepresentations",
+                "MessagesRepresentations", "SafariRepresentations", "PencilKitRepresentations",
+                "PDFKitRepresentations", "AVKitRepresentations", "SceneKitRepresentations",
+                "MapKitRepresentations", "WebKitRepresentations", "UIKitRepresentations",
+                "HostedCollectionRepresentation"
+            ]
+        ),
         .target(name: "RepresentationUtils"),
         .target(name: "QuickLookRepresentations"),
         .target(name: "PhotosRepresentations"),
@@ -56,9 +86,25 @@ let package = Package(
         ),
         .target(name: "PencilKitRepresentations"),
         .target(
-            name: "PDFRepresentations",
+            name: "PDFKitRepresentations",
             dependencies: ["RepresentationUtils"]
         ),
         .target(name: "AVKitRepresentations"),
+        .target(
+            name: "SceneKitRepresentations",
+            dependencies: ["RepresentationUtils"]
+        ),
+        .target(
+            name: "MapKitRepresentations",
+            dependencies: ["RepresentationUtils"]
+        ),
+        .target(
+            name: "WebKitRepresentations",
+            dependencies: ["RepresentationUtils"]
+        ),
+        .target(
+            name: "HostedCollectionRepresentation",
+            dependencies: ["RepresentationUtils"]
+        )
     ]
 )
