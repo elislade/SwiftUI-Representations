@@ -77,7 +77,7 @@
     import Cocoa
     public typealias OSEdgeInsets = NSEdgeInsets
 
-    extension NSEdgeInsets : Equatable {
+    extension NSEdgeInsets : @retroactive Equatable {
         
         public static var zero: Self = .init()
         
