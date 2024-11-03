@@ -73,7 +73,7 @@ func resolveAnimationProvider(_ animation: Any) -> InternalCustomAnimation? {
             let mass = mirror.descendant("mass") as? Double,
             let stiffness = mirror.descendant("stiffness") as? Double,
             let damping = mirror.descendant("damping") as? Double,
-            let initialVelocity = mirror.descendant("_initialVelocity")
+            let _ = mirror.descendant("_initialVelocity")
         else {
             return nil
         }

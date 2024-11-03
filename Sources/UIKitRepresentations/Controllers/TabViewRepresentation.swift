@@ -37,7 +37,7 @@ public final class CustomTabBarController: UIViewController {
     public override func setNeedsStatusBarAppearanceUpdate() { }
     
     public var selectedIndex: Int = 0 {
-        willSet { newValue
+        willSet {
             guard
                 newValue != selectedIndex,
                 children.indices.contains(newValue),
@@ -87,6 +87,9 @@ extension TabViewRepresentation: UIViewControllerRepresentable {
         let ctrl = UITabBarController()
         ctrl.view.backgroundColor = .clear
         ctrl.setViewControllers(tabs, animated: false)
+        if #available(iOS 18.0, *) {
+            ctrl.isTabBarHidden = true
+        }
         ctrl.tabBar.isHidden = true
         return ctrl
     }
