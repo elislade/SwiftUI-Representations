@@ -1,5 +1,5 @@
 
-#if canImport(AppKit) && canImport(SwiftUI)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 
     import SwiftUI
     import AppKit
@@ -72,7 +72,7 @@
 // MARK: - EdgeInsets
 
 
-#if canImport(Cocoa)
+#if canImport(Cocoa) && !targetEnvironment(macCatalyst)
 
     import Cocoa
     public typealias OSEdgeInsets = NSEdgeInsets
@@ -102,7 +102,7 @@
 // MARK: - Font
 
 
-#if canImport(AppKit)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 
     import AppKit
     public typealias OSFont = NSFont
@@ -128,7 +128,7 @@
 // MARK: - Image
 
 
-#if canImport(AppKit)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 
     import AppKit
     public typealias OSImage = NSImage
@@ -160,7 +160,7 @@
 // MARK: - Gesture
 
 
-#if canImport(AppKit)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 
     import AppKit
     public typealias OSGestureRecognizer = NSGestureRecognizer
@@ -192,7 +192,7 @@
 // MARK: - Text
 
 
-#if canImport(AppKit)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 
     import AppKit
     public typealias OSTextView = NSTextView

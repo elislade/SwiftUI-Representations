@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "SwiftUIRepresentations",
-    platforms: [.iOS(.v14), .macOS(.v11), .tvOS(.v12), .watchOS(.v4)],
+    platforms: [.iOS(.v15), .macCatalyst(.v15), .macOS(.v12), .tvOS(.v12), .watchOS(.v4)],
     products: [
         .library(
             name: "ExampleRepresentations",

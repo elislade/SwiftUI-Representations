@@ -42,7 +42,7 @@ public struct HostedCollectionViewControllerRepresentation {
 }
 
 
-#if canImport(UIKit)
+#if canImport(UIKit) || targetEnvironment(macCatalyst)
 
 @available(iOS 16, *)
 extension HostedCollectionViewControllerRepresentation : UIViewControllerRepresentable {
@@ -68,7 +68,9 @@ extension HostedCollectionViewControllerRepresentation : UIViewControllerReprese
 }
 
 
-#elseif canImport(AppKit)
+#endif
+
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 @available(macOS 11, *)
 extension HostedCollectionViewControllerRepresentation : NSViewControllerRepresentable {
     

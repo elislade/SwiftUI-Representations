@@ -39,6 +39,10 @@ public class AVPlayerObservable: AVPlayer, ObservableObject {
         publisher(for: \.currentItem).sink{ [weak self] _ in
             self?.objectWillChange.send()
         }.store(in: &bag)
+        
+//        publisher(for: \.timeControlStatus).sink{ [weak self] _ in
+//            self?.objectWillChange.send()
+//        }.store(in: &bag)
     }
     
     public override var isMuted: Bool {
@@ -72,7 +76,7 @@ public class AVPlayerObservable: AVPlayer, ObservableObject {
     public func timeStream(atInterval interval: TimeInterval) -> AsyncStream<Double> {
         AsyncStream { [unowned self] continuation in
             let observer = addPeriodicTimeObserver(
-                forInterval: CMTime(seconds: interval, preferredTimescale: CMTimeScale(kCMTimeMaxTimescale)),
+                forInterval: CMTime(seconds: interval, preferredTimescale: dynamicTimeScale),
                 queue: nil
             ){ time in
                 if time.isValid {
@@ -84,6 +88,18 @@ public class AVPlayerObservable: AVPlayer, ObservableObject {
                 removeTimeObserver(observer)
             }
         }
+    }
+    
+    public nonisolated func seek(to time: TimeInterval) {
+        seek(
+            to: CMTime(seconds: time, preferredTimescale: dynamicTimeScale),
+            toleranceBefore: .zero,
+            toleranceAfter: .zero
+        )
+    }
+    
+    public nonisolated var dynamicTimeScale: CMTimeScale {
+        return CMTimeScale(600)
     }
     
 }

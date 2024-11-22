@@ -21,7 +21,7 @@ public struct AVPlayerViewRepresentation {
     
 }
 
-#if canImport(UIKit)
+#if canImport(UIKit) || targetEnvironment(macCatalyst)
 
 public final class AVPlayerLayerView: UIView, PlayerBackedView {
     

@@ -165,17 +165,10 @@ public final class HostingCollectionViewController : UIViewController, UICollect
             
             let difference = newSection.cells.difference(from: currentSection.cells){ $0.id == $1.id }
             
-            for item in difference.insertions {
+            for item in difference {
                 switch item {
                 case let .insert(roffset, _, _):
                     insertIndices.append(IndexPath(row: roffset, section: offset))
-                case .remove: continue
-                }
-            }
-            
-            for item in difference.removals {
-                switch item {
-                case .insert: continue
                 case let .remove(roffset, _, _):
                     removeIndices.append(IndexPath(row: roffset, section: offset))
                 }

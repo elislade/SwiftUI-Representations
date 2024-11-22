@@ -23,7 +23,10 @@ extension OSViewRepresentation: UIViewRepresentable {
     
 }
 
-#elseif canImport(AppKit)
+#endif
+
+
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
 
 extension OSViewRepresentation: NSViewRepresentable {
     

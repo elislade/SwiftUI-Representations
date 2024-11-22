@@ -11,7 +11,7 @@ public extension CustomAnimatable {
 }
 
 
-#if canImport(UIKit)
+#if canImport(UIKit) || targetEnvironment(macCatalyst)
 import UIKit
 
 

@@ -4,63 +4,107 @@ import AVKitRepresentations
 
 struct AVKitExample: View  {
     
-    @ObservedObject var player: AVPlayerObservable
+    @StateObject var player: AVPlayerObservable = AVPlayerObservable(url: .eliSladeProfilePosesVideo)
+    
     @State private var time: Double = 0
+    @State private var duration: Double = 0.1
+    
     
     private var timeBandit: Binding<Double> {
-        .init(get: { time }, set: { _time in
-            player.seek(to: CMTime(seconds: _time, preferredTimescale: 1000))
-        })
+        .init(
+            get: { time },
+            set: { player.seek(to: $0) }
+        )
     }
     
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             if let item = player.currentItem {
-                
                 ZStack {
                     Color.clear
                     
                     if player.status == .readyToPlay {
                         AVPlayerViewRepresentation(player)
-                            .transition(.scale(scale: 0.8).combined(with: .opacity))
-                    } else {
-                        Rectangle()
-                            .aspectRatio(16/9, contentMode: .fit)
-                            .transition(.scale(scale: 0.8).combined(with: .opacity))
-                    }
-                }
-                
-                VStack {
-                    HStack {
-                        Button(player.rate == 0 ? "Play" : "Pause"){
-                            player.rate = player.rate == 0 ? 1 : 0
-                        }
-                        
-                        Button("Reset"){
-                            timeBandit.wrappedValue = 0
-                        }
-                    }
-                    
-                    HStack {
-                        Slider(value: $player.volume, in: 0...1)
-                        Text("Volume")
-                    }
-                    
-                    HStack {
-                        Slider(value: $player.rate, in: 0...10)
-                        Text("Speed")
-                    }
-                    
-                    Slider(value: timeBandit, in: 0...(Double(item.duration.value) / 1000))
-                        .onAppear{
-                            Task{ @MainActor in
-                                for await time in player.timeStream(atInterval: 0.01) {
-                                    self.time = time
+                            .onReceive(item.publisher(for: \.duration)){
+                                if !$0.isIndefinite {
+                                    duration = $0.seconds
                                 }
                             }
-                        }
+                            .transition(.scale(scale: 0.8).combined(with: .opacity))
+                    }
                 }
-                .padding()
+                Divider()
+                
+                VStack(spacing: 0) {
+                    VStack {
+                        HStack {
+                            Text("Timecode")
+                                .font(.headline)
+                            
+                            Text(timeBandit.wrappedValue, format: .number.rounded(increment: 0.01))
+
+                            Spacer()
+                            
+                            Text(duration, format: .number.rounded(increment: 0.01))
+                                .opacity(0.5)
+                            
+                            Button(player.rate == 0 ? "Play" : "Pause", systemImage: player.rate == 0 ? "play" : "pause"){
+                                player.rate = player.rate == 0 ? 1 : 0
+                            }
+                            .font(.title)
+                            .disabled(timeBandit.wrappedValue == duration)
+                            
+                            Button("Reset", systemImage: "arrow.counterclockwise"){
+                                timeBandit.wrappedValue = 0
+                            }
+                            .font(.title)
+                            .disabled(timeBandit.wrappedValue == 0)
+                        }
+                        .labelStyle(.iconOnly)
+                        .symbolVariant(.circle.fill)
+                        .symbolRenderingMode(.hierarchical)
+                        
+                        Slider(
+                            value: timeBandit,
+                            in: 0...duration
+                        )
+                    }
+                    .padding()
+                    
+                    Divider()
+                    
+                    VStack {
+                        HStack {
+                            Text("Volume").font(.headline)
+                            Spacer()
+                            Text(player.volume, format: .number.rounded(increment: 0.1))
+                        }
+                        
+                        Slider(value: $player.volume, in: 0...1)
+                    }
+                    .padding()
+                    
+                    Divider()
+                    
+                    VStack {
+                        HStack {
+                            Text("Speed").font(.headline)
+                            Spacer()
+                            Text(player.rate, format: .number.rounded(increment: 0.1))
+                        }
+                        
+                        Slider(value: $player.rate, in: 0...10)
+                            .disabled(timeBandit.wrappedValue == duration)
+                    }
+                    .padding()
+                       
+                }
+                .monospacedDigit()
+                .task {
+                    for await time in player.timeStream(atInterval: 0.01) {
+                        self.time = time
+                    }
+                }
                 .animation(.smooth, value: player.rate)
             }
         }
@@ -71,5 +115,5 @@ struct AVKitExample: View  {
 
 
 #Preview("AVKit Example"){
-    AVKitExample(player: AVPlayerObservable(url: .eliSladeProfilePosesVideo))
+    AVKitExample()
 }

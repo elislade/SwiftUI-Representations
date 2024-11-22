@@ -53,7 +53,7 @@ public class PDFViewObservable: PDFView, ObservableObject {
         }
         .store(in: &bag)
         
-        #if os(iOS)
+        #if canImport(UIKit)
         publisher(for: \.isUsingPageViewController).sink { [weak self] _ in
             self?.objectWillChange.send()
         }

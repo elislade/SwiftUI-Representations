@@ -9,7 +9,7 @@ public class MKMapViewObservable: MKMapView, ObservableObject {
         willSet { objectWillChange.send() }
     }
     
-    #if os(iOS)
+    #if canImport(UIKit)
     @available(iOS 16.0, *)
     public override var selectableMapFeatures: MKMapFeatureOptions {
         willSet { objectWillChange.send() }

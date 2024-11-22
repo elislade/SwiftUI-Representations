@@ -93,7 +93,7 @@ extension SCNViewRepresentation: UIViewRepresentable {
     
 }
 
-#elseif canImport(AppKit)
+#elseif canImport(AppKit) && !targetEnvironment(macCatalyst)
 
 extension SCNViewRepresentation: NSViewRepresentable {
     
