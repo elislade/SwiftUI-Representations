@@ -11,9 +11,26 @@ import RepresentationUtils
 
 // MARK: - Collection View
 
+class CollectionView: UICollectionView {
+    
+    var _safeAreaInset: UIEdgeInsets = .init() {
+        didSet {
+            safeAreaInsetsDidChange()
+        }
+    }
+    
+    override var safeAreaInsets: UIEdgeInsets {
+        get {
+            _safeAreaInset
+        }
+        set {
+            
+        }
+    }
+}
 
 @available(iOS 16, *)
-public final class HostingCollectionViewController : UIViewController, UICollectionViewDataSource {
+public final class HostingCollectionViewController : UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
     
     
     public typealias Content = [CollectionSection]
@@ -28,49 +45,46 @@ public final class HostingCollectionViewController : UIViewController, UICollect
     // MARK: Private Instance Vars
     
     
-    private let collectionView: UICollectionView
+    private let collectionView: CollectionView
     private var body: Content
-    
-    private var initialScrollState: ScrollState?
-    private var lastScrollStateUpdate: ScrollState?
+    private var currentSectionIndex: Int = 0
+    private var currentInsets: EdgeInsets
     private var bag: Set<AnyCancellable> = []
     
     
     // MARK: Lifecycle
     
     
-    init(
-        insets: UIEdgeInsets = .zero,
-        initialScrollState: ScrollState,
-        content: Content
-    ) {
+    init(insets: EdgeInsets = .init(), content: Content) {
         self.body = content
-        self.initialScrollState = initialScrollState
-        self.collectionView = UICollectionView(
+        self.currentInsets = .init()
+        self.collectionView = CollectionView(
             frame: .zero,
-            collectionViewLayout: UICollectionViewFlowLayout()
+            collectionViewLayout: .init()
         )
         
         super.init(nibName: nil, bundle: nil)
         
         setupReusableViews()
-        
-        collectionView.collectionViewLayout = makeLayout()
-        collectionView.insetsLayoutMarginsFromSafeArea = false
-        collectionView.backgroundColor = .clear
         collectionView.allowsSelection = false
         collectionView.dataSource = self
-        additionalSafeAreaInsets = insets
+        collectionView.delegate = self
+        collectionView.collectionViewLayout = makeLayout()
+        collectionView.automaticallyAdjustsScrollIndicatorInsets = false
     }
     
     private func makeLayout() -> UICollectionViewLayout {
-        UICollectionViewCompositionalLayout { [body] index, env in
+        let layout = UICollectionViewCompositionalLayout { [unowned self] index, env in
             if body.indices.contains(index) {
                 return NSCollectionLayoutSection(layout: body[index].layout)
             } else {
-                return nil
+                return .list(using: .init(appearance: .grouped), layoutEnvironment: env)
             }
         }
+        
+        layout.configuration.scrollDirection = .vertical
+        layout.configuration.contentInsetsReference = .safeArea
+        return layout
     }
     
     private func setupReusableViews() {
@@ -94,44 +108,46 @@ public final class HostingCollectionViewController : UIViewController, UICollect
         self.view = collectionView
     }
     
-    public override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        if let initialScrollState {
-            update(scrollState: initialScrollState)
-            self.initialScrollState = nil
-        }
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+        collectionView.backgroundColor = .clear
     }
-    
-    public override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        scrollStateDelegate?.stateDidChange(state: .location(collectionView.contentOffset))
-    }
-
     
     // MARK: Update Methods
     
     
-    func update(scrollState: ScrollState, animated: Bool = false) {
-        guard scrollState != lastScrollStateUpdate else { return }
-        lastScrollStateUpdate = scrollState
-        
-        switch scrollState {
-        case .section(let int):
-            collectionView.scrollToItem(at: IndexPath(row: 0, section: int), at: .top, animated: animated)
-        case .location(let point):
-            print("Collection Loc", point)
-            //collectionView.contentOffset = point
-        }
+    func scrollTo(section: Int, transaction: Transaction) {
+        guard currentSectionIndex != section else { return }
+        currentSectionIndex = section
+        let animated = transaction.animation != nil && transaction.disablesAnimations == false
+        collectionView.scrollToItem(at: IndexPath(item: 0, section: section), at: .top, animated: animated)
     }
     
-    func update(insets: EdgeInsets) {
-        let inset = UIEdgeInsets(top: insets.top, left: insets.leading, bottom: insets.bottom, right: insets.trailing)
-        guard inset != additionalSafeAreaInsets else { return }
-        additionalSafeAreaInsets = inset
+    func update(insets: EdgeInsets, layout: LayoutDirection) {
+        guard currentInsets != insets else { return }
+        currentInsets = insets
+        
+        let insets = UIEdgeInsets(
+            top: insets.top,
+            left: layout == .leftToRight ? insets.leading : insets.trailing,
+            bottom: insets.bottom,
+            right: layout == .leftToRight ? insets.trailing: insets.leading
+        )
+        
+        collectionView._safeAreaInset = insets
+        collectionView.verticalScrollIndicatorInsets.top = insets.top
+        collectionView.verticalScrollIndicatorInsets.bottom = insets.bottom
     }
     
     func update(_ newContent: Content, transaction: Transaction) {
+        guard !(body.isEmpty && newContent.isEmpty) else { return }
+
+        if body.isEmpty && !newContent.isEmpty {
+            body = newContent
+            collectionView.reloadData()
+            return
+        }
+        
         var updateLayoutIndices: [IndexPath] = []
         
         var removeSections: IndexSet = []
@@ -141,76 +157,116 @@ public final class HostingCollectionViewController : UIViewController, UICollect
         
         let max = max(body.count, newContent.count)
         
-        for offset in 0..<max {
-            if !newContent.indices.contains(offset) && body.indices.contains(offset) {
-                removeSections.insert(offset)
-                removeIndices.append(contentsOf: body[offset].cells.indices.map{
-                    IndexPath(row: $0, section: offset)
+        for sectionIndex in 0..<max {
+            if !newContent.indices.contains(sectionIndex) && body.indices.contains(sectionIndex) {
+                removeSections.insert(sectionIndex)
+                removeIndices.append(contentsOf: body[sectionIndex].cells.indices.map{
+                    IndexPath(item: $0, section: sectionIndex)
                 })
                 continue
-            } else if !body.indices.contains(offset) && newContent.indices.contains(offset) {
-                addSections.insert(offset)
-                insertIndices.append(contentsOf: newContent[offset].cells.indices.map{
-                    IndexPath(row: $0, section: offset)
+            } else if !body.indices.contains(sectionIndex) && newContent.indices.contains(sectionIndex) {
+                addSections.insert(sectionIndex)
+                insertIndices.append(contentsOf: newContent[sectionIndex].cells.indices.map{
+                    IndexPath(item: $0, section: sectionIndex)
                 })
                 continue
             }
             
-            let newSection = newContent[offset]
-            let currentSection = body[offset]
+            let newSection = newContent[sectionIndex]
+            let currentSection = body[sectionIndex]
             
             if newSection.layout != currentSection.layout {
-                updateLayoutIndices.append(IndexPath(row: 0, section: offset))
+                updateLayoutIndices.append(IndexPath(item: 0, section: sectionIndex))
             }
-            
+
             let difference = newSection.cells.difference(from: currentSection.cells){ $0.id == $1.id }
             
             for item in difference {
                 switch item {
-                case let .insert(roffset, _, _):
-                    insertIndices.append(IndexPath(row: roffset, section: offset))
-                case let .remove(roffset, _, _):
-                    removeIndices.append(IndexPath(row: roffset, section: offset))
+                case let .insert(offset, _, _):
+                    insertIndices.append(IndexPath(item: offset, section: sectionIndex))
+                case let .remove(offset, _, _):
+                    removeIndices.append(IndexPath(item: offset, section: sectionIndex))
                 }
             }
         }
         
         guard !insertIndices.isEmpty || !removeIndices.isEmpty || !updateLayoutIndices.isEmpty else { return }
         
-        self.body = newContent
-        let new = makeLayout()
-        self.collectionView.collectionViewLayout.prepareForTransition(to: new)
+        func update() {
+            collectionView.performBatchUpdates { [unowned self] in
+                body = newContent
+                collectionView.deleteItems(at: removeIndices)
+                collectionView.deleteSections(removeSections)
+                collectionView.insertItems(at: insertIndices)
+                collectionView.insertSections(addSections)
+                
+                if !updateLayoutIndices.isEmpty {
+                    let ctx = UICollectionViewLayoutInvalidationContext()
+                    ctx.invalidateItems(at: updateLayoutIndices)
+                    collectionView.collectionViewLayout.invalidateLayout(with: ctx)
+                }
+            } completion: { _ in }
+        }
         
         if
             !transaction.disablesAnimations,
             let animation = transaction.animation,
             let animator = resolveAnimation(animation)
         {
-            animator.animate { [weak self] in
-                guard let self else { return }
-                self.collectionView.performBatchUpdates {
-                    self.collectionView.insertSections(addSections)
-                    self.collectionView.deleteSections(removeSections)
-                    self.collectionView.insertItems(at: insertIndices)
-                    self.collectionView.deleteItems(at: removeIndices)
-                }
-            } completion: { [collectionView] in
-                collectionView.collectionViewLayout = new
-            }
+            animator.animate(block: update)
         } else {
-            collectionView.performBatchUpdates {
-                collectionView.insertSections(addSections)
-                collectionView.deleteSections(removeSections)
-                collectionView.insertItems(at: insertIndices)
-                collectionView.deleteItems(at: removeIndices)
-            } completion: { [unowned self] _ in
-                collectionView.collectionViewLayout = new
-            }
+            update()
         }
     }
     
     
-    // MARK: UICollectionViewDataSource
+    // MARK: - UICollectionViewDelegate
+    
+    
+    public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        
+        guard !collectionView.indexPathsForVisibleItems.isEmpty else { return }
+        
+        typealias SectionIndex = Int
+        var sectionCellCounts: [SectionIndex : Int] = [:]
+        
+        // Which ever section that owns the majority of visible cells, will be the one that is considered current.
+        // In the case of a tie where one of the ties is the last section no change will be propagated up to the delegate.
+        // In the case of a tie where neither of the ties were the last section. Sort the index closest to the last one.
+        let sections = collectionView.indexPathsForVisibleItems.map(\.section)
+        
+        for section in sections {
+            if let count = sectionCellCounts[section] {
+                sectionCellCounts[section] = count + 1
+            } else {
+                sectionCellCounts[section] = 1
+            }
+        }
+        
+        let sortedSections = sectionCellCounts.sorted(by: { $0.value > $1.value })
+        
+        if sortedSections.count > 1 {
+            let isTied = sortedSections[0].value == sortedSections[1].value
+            let isOneLastValue = sortedSections[0].key == currentSectionIndex || sortedSections[1].key == currentSectionIndex
+            if isTied && !isOneLastValue {
+                let winner = [currentSectionIndex, sortedSections[0].key, sortedSections[1].key].sorted()[1]
+                if winner != currentSectionIndex {
+                    currentSectionIndex = winner
+                    scrollStateDelegate?.didChangeSection(index: winner)
+                }
+                return
+            }
+        }
+        
+        if sortedSections[0].key != currentSectionIndex {
+            currentSectionIndex = sortedSections[0].key
+            scrollStateDelegate?.didChangeSection(index: sortedSections[0].key )
+        }
+    }
+    
+    
+    // MARK: - UICollectionViewDataSource
     
     
     public func numberOfSections(in collectionView: UICollectionView) -> Int {
@@ -225,8 +281,7 @@ public final class HostingCollectionViewController : UIViewController, UICollect
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "Cell", for: indexPath)
         cell.contentConfiguration = UIHostingConfiguration{
             body[indexPath.section].cells[indexPath.item].view()
-        }
-        .margins(.all, 0)
+        }.margins(.all, 0)
         return cell
     }
     

@@ -46,6 +46,7 @@ import SwiftUI
     
     // ForEach
     
+    
     public static func buildPartialBlock<Data: RandomAccessCollection, ID: Hashable>(first: ForEach<Data, ID, CollectionSection>) -> Result {
         first.data.map { first.content($0) }
     }
@@ -58,7 +59,7 @@ import SwiftUI
         accumulated + next.data.map { next.content($0) }
     }
     
-    public static func buildPartialBlock<Data: RandomAccessCollection,ID: Hashable, Element: View>(accumulated: Result, next: ForEach<Data, ID, Element>) -> Result {
+    public static func buildPartialBlock<Data: RandomAccessCollection, ID: Hashable, Element: View>(accumulated: Result, next: ForEach<Data, ID, Element>) -> Result {
         accumulated + CollectionSectionBuilder.buildBlock(next)
     }
     
@@ -85,9 +86,20 @@ import SwiftUI
     }
     
     public static func buildBlock<Data: RandomAccessCollection, ID: Hashable, Element: View>(_ content: ForEach<Data, ID, Element>) -> Result {
-        content.data.map {
+        content.data.lazy.map {
             CollectionSectionBuilder.buildBlock(content.content($0))
         }.flatMap{ $0 }
     }
     
+    
+    // Section
+    
+    
+    public static func buildPartialBlock<Header: View, Content: View>(first: Section<Header, Content, EmptyView>) -> Result {
+        let mirror = Mirror(reflecting: first)
+        let header = mirror.descendant("header") as! Header
+        let content = mirror.descendant("content") as! Content
+        return [CollectionSection{ content } header: { header }]
+    }
+
 }

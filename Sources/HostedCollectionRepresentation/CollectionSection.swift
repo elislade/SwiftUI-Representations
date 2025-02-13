@@ -7,7 +7,7 @@ public struct CollectionSection {
     let header: () -> AnyView
     let cells: [Cell]
     
-    public init<Header: View>(
+    public nonisolated init<Header: View>(
         layout: Layout = .init(),
         @CollectionSectionCellBuilder cells: @escaping () -> [Cell],
         @ViewBuilder header: @escaping () -> Header
@@ -24,23 +24,23 @@ public struct CollectionSection {
 
 extension CollectionSection {
     
-    public struct Layout: Equatable, Sendable {
+    public struct Layout: Equatable, Sendable, BitwiseCopyable {
         
-        let isHeaderPinned: Bool
-        let spacing: Double
-        let insets: EdgeInsets
-        let columns: Int
+        public var pinHeader: Bool
+        public var spacing: Double
+        public var insets: EdgeInsets
+        public var columns: Int
         
         public init(
             columns: Int = 2,
             spacing: Double = 0,
-            isHeaderPinned: Bool = false,
+            pinHeader: Bool = false,
             insets: EdgeInsets = .init()
         ) {
             self.columns = columns
             self.spacing = spacing
             self.insets = insets
-            self.isHeaderPinned = isHeaderPinned
+            self.pinHeader = pinHeader
         }
         
     }
@@ -78,7 +78,15 @@ extension CollectionSection {
 
 extension CollectionSection: View {
     
-    /// Empty View conformance to allow for the SwiftUI ForEach to accept A CollectionSection so that the result builders work correctly.
-    public var body: EmptyView { EmptyView() }
+    // Fallback to SwiftUI.Section View when being built by normal ViewBuilder as a View.
+    public var body: some View {
+        Section {
+            ForEach(cells, id: \.id){
+                $0.view()
+            }
+        } header: {
+            header()
+        }
+    }
     
 }

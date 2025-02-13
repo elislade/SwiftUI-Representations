@@ -27,8 +27,7 @@ public final class HostingCollectionViewController: NSViewController, NSCollecti
     private let collectionView: NSCollectionView
     private var body: Content
     
-    private var initialScrollState: ScrollState?
-    private var lastScrollStateUpdate: ScrollState?
+    private var currentSectionIndex: Int = 0
     private var bag: Set<AnyCancellable> = []
     
     private let cellID = NSUserInterfaceItemIdentifier("Cell")
@@ -37,12 +36,10 @@ public final class HostingCollectionViewController: NSViewController, NSCollecti
     // MARK: Lifecycle
     
     init(
-        insets: NSEdgeInsets = .init(),
-        initialScrollState: ScrollState,
+        insets: EdgeInsets,
         content: Content
     ) {
         self.body = content
-        self.initialScrollState = initialScrollState
         self.collectionView = NSCollectionView(frame: .init(x: 0, y: 0, width: 10, height: 0))
         
         super.init(nibName: nil, bundle: nil)
@@ -54,11 +51,11 @@ public final class HostingCollectionViewController: NSViewController, NSCollecti
     }
     
     private func makeLayout() -> NSCollectionViewLayout {
-        let configuration = NSCollectionViewCompositionalLayoutConfiguration()
-        configuration.scrollDirection = .vertical
-        return NSCollectionViewCompositionalLayout { [body] index, env in
+        let layout = NSCollectionViewCompositionalLayout { [unowned self] index, env in
             NSCollectionLayoutSection(layout: body[index].layout)
         }
+        layout.configuration.scrollDirection = .vertical
+        return layout
     }
     
     public override func viewDidLoad() {
@@ -73,7 +70,7 @@ public final class HostingCollectionViewController: NSViewController, NSCollecti
         collectionView.register(Cell.self, forItemWithIdentifier: cellID)
         
         collectionView.register(
-            NSHostingView<AnyView>.self,
+            SupplementaryViewHost.self,
             forSupplementaryViewOfKind: CONST.headerKind,
             withIdentifier: headerID
         )
@@ -92,45 +89,104 @@ public final class HostingCollectionViewController: NSViewController, NSCollecti
     public override func viewDidAppear() {
         super.viewDidAppear()
         
-        if let initialScrollState {
-            update(scrollState: initialScrollState)
-            self.initialScrollState = nil
+        if currentSectionIndex == 0 {
+            collectionView.scrollToItems(at: [IndexPath(item: 0, section: 0)], scrollPosition: .top)
         }
     }
     
-    public override func viewWillDisappear() {
-        super.viewWillDisappear()
-        //scrollStateDelegate?.stateDidChange(state: .location(collectionView.contentOffset))
-    }
-    
-    public override func viewWillLayout() {
-        super.viewWillLayout()
-        //collectionView.frame = scrollView.bounds
-    }
     
     // MARK: Update Methods
     
-    func update(scrollState: ScrollState, animated: Bool = false) {
-        guard scrollState != lastScrollStateUpdate else { return }
-        lastScrollStateUpdate = scrollState
-        
-        switch scrollState {
-        case .section(let int):
-            collectionView.scrollToItems(at: [IndexPath(item: 0, section: int)], scrollPosition: .top)
-        case .location(let point):
-            print("Collection Loc", point)
-            //collectionView.contentOffset = point
-        }
+    func scrollTo(section: Int, transaction: Transaction) {
+        guard section != currentSectionIndex else { return }
+        currentSectionIndex = section
+        collectionView.scrollToItems(at: [IndexPath(item: 0, section: section)], scrollPosition: .top)
     }
     
     func update(insets: EdgeInsets) {
-//        let inset = NSEdgeInsets(top: insets.top, left: insets.leading, bottom: insets.bottom, right: insets.trailing)
-//        guard inset != additionalSafeAreaInsets else { return }
-//        additionalSafeAreaInsets = inset
+        scrollView.additionalSafeAreaInsets = .init(top: insets.top, left: 0, bottom: 0, right: 0)
     }
     
     func update(_ newContent: Content, transaction: Transaction) {
-        //TODO:
+        guard !(body.isEmpty && newContent.isEmpty) else { return }
+
+        if body.isEmpty && !newContent.isEmpty {
+            body = newContent
+            collectionView.reloadData()
+            return
+        }
+        
+        var updateLayoutIndices: Set<IndexPath> = []
+        
+        var removeSections: IndexSet = []
+        var addSections: IndexSet = []
+        var insertIndices: Set<IndexPath> = []
+        var removeIndices: Set<IndexPath> = []
+        
+        let max = max(body.count, newContent.count)
+        
+        for sectionIndex in 0..<max {
+            if !newContent.indices.contains(sectionIndex) && body.indices.contains(sectionIndex) {
+                removeSections.insert(sectionIndex)
+                removeIndices.formUnion(body[sectionIndex].cells.indices.map{
+                    IndexPath(item: $0, section: sectionIndex)
+                })
+                continue
+            } else if !body.indices.contains(sectionIndex) && newContent.indices.contains(sectionIndex) {
+                addSections.insert(sectionIndex)
+                insertIndices.formUnion(newContent[sectionIndex].cells.indices.map{
+                    IndexPath(item: $0, section: sectionIndex)
+                })
+                continue
+            }
+            
+            let newSection = newContent[sectionIndex]
+            let currentSection = body[sectionIndex]
+            
+            if newSection.layout != currentSection.layout {
+                updateLayoutIndices.insert(IndexPath(item: 0, section: sectionIndex))
+            }
+
+            let difference = newSection.cells.difference(from: currentSection.cells){ $0.id == $1.id }
+            
+            for item in difference {
+                switch item {
+                case let .insert(offset, _, _):
+                    insertIndices.insert(IndexPath(item: offset, section: sectionIndex))
+                case let .remove(offset, _, _):
+                    removeIndices.insert(IndexPath(item: offset, section: sectionIndex))
+                }
+            }
+        }
+        
+        guard !insertIndices.isEmpty || !removeIndices.isEmpty || !updateLayoutIndices.isEmpty else { return }
+        
+        func update() {
+            collectionView.performBatchUpdates { [unowned self] in
+                body = newContent
+                collectionView.deleteItems(at: removeIndices)
+                collectionView.deleteSections(removeSections)
+                collectionView.insertItems(at: insertIndices)
+                collectionView.insertSections(addSections)
+                
+                if !updateLayoutIndices.isEmpty {
+                    let ctx = NSCollectionViewLayoutInvalidationContext()
+                    ctx.invalidateItems(at: updateLayoutIndices)
+                    collectionView.collectionViewLayout?.invalidateLayout(with: ctx)
+                }
+            }
+        }
+        
+        if
+            !transaction.disablesAnimations,
+            let animation = transaction.animation,
+            let animator = resolveAnimation(animation)
+        {
+            animator.animate(block: update)
+        } else {
+            update()
+        }
+        
     }
     
     
@@ -158,9 +214,9 @@ public final class HostingCollectionViewController: NSViewController, NSCollecti
             ofKind: kind,
             withIdentifier: headerID,
             for: indexPath
-        ) as! NSHostingView<AnyView>
+        ) as! SupplementaryViewHost
 
-        cell.rootView = body[indexPath.section].header()
+        cell.host.rootView = body[indexPath.section].header()
 
         return cell
     }
@@ -176,8 +232,36 @@ extension HostingCollectionViewController {
         
         override func loadView() {
             let v = NSHostingView(rootView: AnyView(EmptyView()))
+//            if #available(macOS 13.0, *) {
+//                v.sizingOptions = .maxSize
+//            }
             self.view = v
             self.hostingView = v
+        }
+        
+    }
+    
+    final class SupplementaryViewHost: NSView, NSCollectionViewElement  {
+        
+        unowned let host: NSHostingView<AnyView>
+        
+        override init(frame frameRect: NSRect) {
+            let host = NSHostingView(rootView: AnyView(EmptyView()))
+            if #available(macOS 13.0, *) {
+                host.sizingOptions = .maxSize
+            }
+            self.host = host
+            super.init(frame: frameRect)
+            addSubview(host)
+        }
+        
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+        
+        override func layout() {
+            super.layout()
+            host.frame = bounds
         }
         
     }

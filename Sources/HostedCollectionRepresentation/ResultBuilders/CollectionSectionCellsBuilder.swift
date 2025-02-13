@@ -10,7 +10,11 @@ import SwiftUI
     }
     
     public static func buildBlock<Content: View>(_ content: Content) -> Result {
-        return [CollectionSection.Cell(id: 0){ content }]
+        if let id = Mirror(reflecting: content).descendant("id") as? AnyHashable {
+            return [CollectionSection.Cell(id: id){ content }]
+        } else {
+            return [CollectionSection.Cell(id: 0){ content }]
+        }
     }
     
     public static func buildBlock<each C: View>(_ c: repeat each C) -> Result {
@@ -20,49 +24,54 @@ import SwiftUI
     }
     
     
+    // Tuple
+    
+    public static func buildBlock<First: View, Second: View>(_ content: TupleView<(First,Second)>) -> Result {
+        let a = CollectionSectionCellBuilder.buildBlock(content.value.0)
+        let b = CollectionSectionCellBuilder.buildBlock(content.value.1)
+        return a + b
+    }
+        
+    
     // SwiftUI View
     
-    public static func buildPartialBlock<Data: RandomAccessCollection, ID: Hashable, Element: View>(first: ForEach<Data, ID, Element>) -> Result where Data.Index : Hashable, ID == Data.Index {
-        first.data.indices.map { idx in
-            CollectionSection.Cell(id: idx){ first.content(first.data[idx]) }
-        }
-    }
-    
     public static func buildPartialBlock<V: View>(first: V) -> Result {
-        CollectionSectionCellBuilder.buildBlock(first)
-    }
-    
+        return CollectionSectionCellBuilder.buildBlock(first)
+    } 
     
     public static func buildPartialBlock<V: View>(accumulated: Result, next: V) -> Result {
-        accumulated + CollectionSectionCellBuilder.buildBlock(next)
+        if let id = Mirror(reflecting: next).descendant("id") as? AnyHashable {
+            return accumulated + [CollectionSection.Cell(id: id){ next }]
+        } else {
+            return accumulated + [CollectionSection.Cell(id: accumulated.count + 1){ next }]
+        }
     }
     
     
     // ForEach
     
-    public static func buildPartialBlock<Data: RandomAccessCollection, ID: Hashable, Element: View>(first: ForEach<Data, ID, Element>) -> Result {
-        CollectionSectionCellBuilder.buildBlock(first)
+    
+    public static func buildBlock<Data: RandomAccessCollection, ID: Hashable, Element: View>(_ content: ForEach<Data, ID, Element>) -> Result {
+        let mirror = Mirror(reflecting: content)
+        let idPath = mirror.descendant("idGenerator", "keyPath") as! KeyPath<Data.Element, ID>
+        
+        return content.data.lazy.map { ele in
+            CollectionSection.Cell(id: ele[keyPath: idPath]){
+                content.content(ele)
+            }
+        }
     }
     
-    public static func buildPartialBlock<Data: RandomAccessCollection, ID: Hashable, Element: View>(accumulated: Result, next: ForEach<Data, ID, Element>) -> Result where Data.Index : Hashable, ID == Data.Index {
-        
-        accumulated + next.data.indices.map { idx in
-            CollectionSection.Cell(id: idx){ next.content(next.data[idx]) }
-        }
+    public static func buildPartialBlock<Data: RandomAccessCollection, ID: Hashable, Element: View>(first: ForEach<Data, ID, Element>) -> Result {
+        Self.buildBlock(first)
     }
     
     public static func buildPartialBlock<Data: RandomAccessCollection, ID: Hashable, Element: View>(accumulated: Result, next: ForEach<Data, ID, Element>) -> Result {
-        accumulated + CollectionSectionCellBuilder.buildBlock(next)
+        return accumulated + Self.buildBlock(next)
     }
     
     public static func buildFinalResult(_ component: Result) -> Result {
-        component.enumerated().map {
-            if let int = $0.element.id as? Int, int == 0 {
-                return .init(id: $0.offset, view: $0.element.view)
-            } else {
-                return $0.element
-            }
-        }
+        return component
     }
     
     public static func buildEither<V: View>(second component: V) -> Result {

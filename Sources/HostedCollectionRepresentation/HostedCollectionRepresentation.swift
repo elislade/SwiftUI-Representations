@@ -19,7 +19,7 @@ extension NSCollectionLayoutSection {
             alignment: .top
         )
         
-        header.pinToVisibleBounds = layout.isHeaderPinned
+        header.pinToVisibleBounds = layout.pinHeader
         
         let size: NSCollectionLayoutSize = .init(
             widthDimension: .fractionalWidth(1),
@@ -38,12 +38,21 @@ extension NSCollectionLayoutSection {
         
         #if os(iOS)
         self.supplementaryContentInsetsReference = .none
-        //FIXME: Fix header to work with AppKit
-        self.boundarySupplementaryItems = [ header ]
+        //self.contentInsetsReference = .none
         #endif
         
+        self.boundarySupplementaryItems = [ header ]
         self.interGroupSpacing = layout.spacing
         self.contentInsets = .init(layout.insets)
+    }
+    
+}
+
+
+extension NSDirectionalEdgeInsets {
+    
+    public nonisolated init(_ insets: EdgeInsets){
+        self.init(top: insets.top, leading: insets.leading, bottom: insets.bottom, trailing: insets.trailing)
     }
     
 }

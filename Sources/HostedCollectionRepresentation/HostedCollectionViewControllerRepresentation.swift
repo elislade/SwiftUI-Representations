@@ -1,41 +1,54 @@
 import SwiftUI
 
 @available(iOS 16, macOS 11, *)
-public struct HostedCollectionViewControllerRepresentation {
+public struct HostedCollectionRepresentation {
 
     public typealias Content = [CollectionSection]
     
     let updateDiffing: Bool
     let insets: EdgeInsets
-    let scrollState: Binding<ScrollState>
+    let sectionIndex: Binding<Int>
     let content: Content
     
+    /// Initializes instance.
+    ///
+    /// - Note: You can disable update diffing to optimize performance where you know when or if data updates, to reduce unnecessary collection diffing.
+    ///
+    /// - Parameters:
+    ///   - updateDiffing: Bool indicating if value update should trigger view update. Defaults to true.
+    ///   - insets: EdgeInsets to inset scroll content by. Defaults to zero.
+    ///   - sectionIndex: Binding to Current sectionIndex. Defaults to constant 0 binding.)
+    ///   - content: Content that will be built with the CollectionSectionBuilder.
     public init(
         updateDiffing: Bool = true,
         insets: EdgeInsets = .init(),
-        scrollState: Binding<ScrollState> = .constant(.section(0)),
+        sectionIndex: Binding<Int> = .constant(0),
         @CollectionSectionBuilder content: @escaping () -> Content
     ) {
         self.updateDiffing = updateDiffing
         self.insets = insets
-        self.scrollState = scrollState
+        self.sectionIndex = sectionIndex
         self.content = content()
     }
     
     public func makeCoordinator() -> Coordinator {
-        Coordinator(scrollState: scrollState)
+        Coordinator(section: sectionIndex)
     }
     
     public final class Coordinator: ScrollStateDelegate {
         
-        let scrollState: Binding<ScrollState>
+        let section: Binding<Int>
         
-        init(scrollState: Binding<ScrollState>) {
-            self.scrollState = scrollState
+        init(section: Binding<Int>) {
+            self.section = section
         }
         
-        func stateDidChange(state: ScrollState) {
-            
+        func didChangeOffset(offset: CGPoint) {}
+        
+        func didChangeSection(index: Int) {
+            if index != section.wrappedValue {
+                section.wrappedValue = index
+            }
         }
     }
     
@@ -45,14 +58,14 @@ public struct HostedCollectionViewControllerRepresentation {
 #if canImport(UIKit) || targetEnvironment(macCatalyst)
 
 @available(iOS 16, *)
-extension HostedCollectionViewControllerRepresentation : UIViewControllerRepresentable {
+extension HostedCollectionRepresentation : UIViewControllerRepresentable {
     
     public func makeUIViewController(context: Context) -> HostingCollectionViewController {
         let collection = HostingCollectionViewController(
-            insets: .init(top: insets.top, left: insets.leading, bottom: insets.bottom, right: insets.trailing),
-            initialScrollState: scrollState.wrappedValue,
+            insets: insets,
             content: content
         )
+        collection.update(insets: insets, layout: context.environment.layoutDirection)
         collection.scrollStateDelegate = context.coordinator
         return collection
     }
@@ -61,8 +74,9 @@ extension HostedCollectionViewControllerRepresentation : UIViewControllerReprese
         if updateDiffing {
             uiViewController.update(content, transaction: context.transaction)
         }
-        uiViewController.update(scrollState: scrollState.wrappedValue)
-        uiViewController.update(insets: insets)
+  
+        uiViewController.scrollTo(section: sectionIndex.wrappedValue, transaction: sectionIndex.transaction)
+        uiViewController.update(insets: insets, layout: context.environment.layoutDirection)
     }
     
 }
@@ -72,61 +86,33 @@ extension HostedCollectionViewControllerRepresentation : UIViewControllerReprese
 
 #if canImport(AppKit) && !targetEnvironment(macCatalyst)
 @available(macOS 11, *)
-extension HostedCollectionViewControllerRepresentation : NSViewControllerRepresentable {
+extension HostedCollectionRepresentation : NSViewControllerRepresentable {
     
-    public typealias NSViewControllerType = NSViewController //HostingCollectionViewController
+    public typealias NSViewControllerType = HostingCollectionViewController
     
     public func makeNSViewController(context: Context) -> NSViewControllerType {
-       // let c = NSViewController()
         let collection = HostingCollectionViewController(
-            insets: .init(top: insets.top, left: insets.leading, bottom: insets.bottom, right: insets.trailing),
-            initialScrollState: scrollState.wrappedValue,
+            insets: insets,
             content: content
         )
         collection.scrollStateDelegate = context.coordinator
-//        c.view.layer = CALayer()
-//        c.view.wantsLayer = true
-//        c.view.backgroundColor = .init(gray: 0, alpha: 1)
         return collection
     }
     
     public func updateNSViewController(_ nsViewController: NSViewControllerType, context: Context) {
-//        if updateDiffing {
-//            nsViewController.update(content, transaction: context.transaction)
-//        }
-//        nsViewController.update(scrollState: scrollState.wrappedValue)
-//        nsViewController.update(insets: insets)
+        if updateDiffing {
+            nsViewController.update(content, transaction: context.transaction)
+        }
+        nsViewController.update(insets: insets)
+        nsViewController.scrollTo(section: sectionIndex.wrappedValue, transaction: sectionIndex.transaction)
     }
     
 }
 #endif
 
 
-// MARK: - Scroll State
-
-
-public enum ScrollState {
-    case section(Int)
-    case location(CGPoint)
-    
-    var value: (index: Int?, location: CGPoint?) {
-        switch self {
-        case .section(let i): return (i, nil)
-        case .location(let p): return (nil, p)
-        }
-    }
-}
-
-extension ScrollState: Equatable {
-    public static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.value == rhs.value
-    }
-    
-    public static func != (lhs: Self, rhs: Self) -> Bool {
-        lhs.value != rhs.value
-    }
-}
 
 protocol ScrollStateDelegate: AnyObject {
-    func stateDidChange(state: ScrollState)
+    func didChangeOffset(offset: CGPoint)
+    func didChangeSection(index: Int)
 }
