@@ -21,7 +21,7 @@ struct HostedCollectionExample: View {
         
     }
     
-    @State private var sectionIndex:Int = 0
+    @State private var sectionIndex: Int = 0
     @State private var sections: [Section] = [.init(), .init()]
     
     private var header: some View {
@@ -173,74 +173,105 @@ struct HostedCollectionExample: View {
                         
                         Divider()
                         
-                        Stepper(
-                            onIncrement: { layout.columns += 1 },
-                            onDecrement: layout.columns >= 1 ? { layout.columns -= 1 } : nil
-                        ){
-                            Text("Columns")
-                                .font(.headline)
-                        }
-                        .padding()
+                        ColumnGroup(columns: $layout.columns)
+                            .padding()
+     
+                        Divider()
+                        
+                        SpacingGroup(spacing: $layout.spacing)
+                            .padding()
                         
                         Divider()
                         
-                        VStack {
-                            HStack {
-                                Text("Spacing")
-                                    .font(.headline)
-                                
-                                Spacer()
-                                
-                                Text("\(Int(layout.spacing))").monospacedDigit()
-                            }
-                            
-                            Slider(value: $layout.spacing, in: 0...30, step: 1)
-                        }
-                        .padding()
-                        
-                        Divider()
-                        
-                        VStack {
-                            HStack {
-                                Text("Insets")
-                                    .font(.headline)
-                                Spacer()
-                            }
-                            HStack {
-                                Text("Top")
-                                    .font(.footnote.bold())
-                                    .opacity(0.6)
-                                    .frame(width: 60, alignment: .leading)
-                                
-                                Slider(value: $layout.insets.top, in: 0...100)
-                            }
-                            HStack {
-                                Text("Bottom")
-                                    .font(.footnote.bold())
-                                    .opacity(0.6)
-                                    .frame(width: 60, alignment: .leading)
-                                
-                                Slider(value: $layout.insets.bottom, in: 0...100)
-                            }
-                            HStack {
-                                Text("Leading")
-                                    .font(.footnote.bold())
-                                    .opacity(0.6)
-                                    .frame(width: 60, alignment: .leading)
-                                
-                                Slider(value: $layout.insets.leading, in: 0...100)
-                            }
-                            HStack {
-                                Text("Trailing")
-                                    .font(.footnote.bold())
-                                    .opacity(0.6)
-                                    .frame(width: 60, alignment: .leading)
-                                
-                                Slider(value: $layout.insets.trailing, in: 0...100)
-                            }
-                        }
-                        .padding()
+                        InsetGroup(insets: $layout.insets)
+                            .padding()
                     }
+                }
+            }
+        }
+        
+        
+        struct ColumnGroup: View {
+            
+            @Binding var columns: Int
+            
+            var body: some View {
+                Stepper(
+                    onIncrement: { columns += 1 },
+                    onDecrement: columns >= 1 ? { columns -= 1 } : nil
+                ){
+                    Text("Columns")
+                        .font(.headline)
+                }
+            }
+            
+        }
+        
+        
+        struct InsetGroup: View {
+            
+            @Binding var insets: EdgeInsets
+        
+            var body: some View {
+                VStack {
+                    HStack {
+                        Text("Insets")
+                            .font(.headline)
+                        Spacer()
+                    }
+                    HStack {
+                        Text("Top")
+                            .font(.footnote.bold())
+                            .opacity(0.6)
+                            .frame(width: 60, alignment: .leading)
+                        
+                        Slider(value: $insets.top, in: 0...100)
+                    }
+                    HStack {
+                        Text("Bottom")
+                            .font(.footnote.bold())
+                            .opacity(0.6)
+                            .frame(width: 60, alignment: .leading)
+                        
+                        Slider(value: $insets.bottom, in: 0...100)
+                    }
+                    HStack {
+                        Text("Leading")
+                            .font(.footnote.bold())
+                            .opacity(0.6)
+                            .frame(width: 60, alignment: .leading)
+                        
+                        Slider(value: $insets.leading, in: 0...100)
+                    }
+                    HStack {
+                        Text("Trailing")
+                            .font(.footnote.bold())
+                            .opacity(0.6)
+                            .frame(width: 60, alignment: .leading)
+                        
+                        Slider(value: $insets.trailing, in: 0...100)
+                    }
+                }
+            }
+        }
+    
+        
+        struct SpacingGroup: View {
+            
+            @Binding var spacing: Double
+            
+            var body: some View {
+                VStack {
+                    HStack {
+                        Text("Spacing")
+                            .font(.headline)
+                        
+                        Spacer()
+                        
+                        Text("\(Int(spacing))").monospacedDigit()
+                    }
+                    
+                    Slider(value: $spacing, in: 0...30, step: 1)
                 }
             }
         }

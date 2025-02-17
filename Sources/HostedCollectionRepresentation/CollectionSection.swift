@@ -81,9 +81,17 @@ extension CollectionSection: View {
     // Fallback to SwiftUI.Section View when being built by normal ViewBuilder as a View.
     public var body: some View {
         Section {
-            ForEach(cells, id: \.id){
-                $0.view()
+            LazyVGrid(
+                columns: Array(repeating: .init(spacing: layout.spacing), count: layout.columns),
+                spacing: layout.spacing
+            ){
+                ForEach(cells, id: \.id){
+                    $0.view()
+                }
             }
+            .padding(layout.insets)
+            .animation(.smooth, value: layout)
+            .animation(.smooth, value: cells.indices)
         } header: {
             header()
         }
