@@ -1,4 +1,3 @@
-import Foundation
 import SwiftUI
 import RepresentationUtils
 import SceneKit
@@ -84,6 +83,7 @@ extension SCNViewRepresentation: UIViewRepresentable {
         ))
         
         sync(view: view)
+        willMakeView(view)
         return view
     }
     
@@ -99,7 +99,12 @@ extension SCNViewRepresentation: NSViewRepresentable {
     
     public func makeNSView(context: Context) -> SCNView {
         let view = SCNView(frame: .zero)
+        view.addGestureRecognizer(OSTapGestureRecognizer(
+            target: context.coordinator,
+            action: #selector(context.coordinator.tap)
+        ))
         sync(view: view)
+        willMakeView(view)
         return view
     }
     

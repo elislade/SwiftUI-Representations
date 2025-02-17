@@ -31,7 +31,7 @@ struct SceneKitExample: View {
             Divider()
             
             ScrollView {
-                VStack(spacing: 0){
+                VStack(alignment: .leading, spacing: 0){
                     Toggle(isOn: $cameraControls){
                         Text("Camera Controls").font(.headline)
                     }
@@ -166,4 +166,7 @@ extension SCNAction {
 
 #Preview("SceneKit Example") {
     SceneKitExample()
+    #if os(macOS)
+        .frame(width: 320, height: 480)
+    #endif
 }
