@@ -11,11 +11,7 @@ struct MapKitExample: View {
     private let bottomHeight: CGFloat = 280
     
     private var backgroundView: some View {
-        #if os(macOS)
-        Color.primary
-        #else
-        UIVisualEffectViewRepresentation()
-        #endif
+        Rectangle().fill(.bar)
     }
     
     var body: some View {
@@ -32,6 +28,7 @@ struct MapKitExample: View {
             
             VStack(spacing: 0) {
                 TypeToggle(type: $view.mapType)
+                    .labelsHidden()
                 
                 Divider()
                 
@@ -60,7 +57,7 @@ struct MapKitExample: View {
             }
             .frame(height: bottomHeight)
             .background(backgroundView.ignoresSafeArea())
-            .environment(\.colorScheme, view.mapType == .standard ? colorScheme : .dark)
+            .preferredColorScheme(view.mapType == .standard ? .light : .dark)
         }
     }
     
@@ -130,44 +127,51 @@ struct MapKitExample: View {
             Section {
                 VStack(alignment: .leading) {
                     HStack {
-                        Text("Heading").font(.headline)
-                        Spacer(minLength: 16)
-                        Text("\(Int(camera.heading))º")
-                            .font(.body.monospacedDigit())
-                            .opacity(0.6)
+                        HStack {
+                            Text("Heading").font(.headline)
+                            Spacer(minLength: 8)
+                            Text("\(Int(camera.heading))º")
+                                .font(.body.monospacedDigit())
+                                .opacity(0.6)
+                        }
+                        .frame(width: 110)
+                        
                         Slider(value: $camera.heading, in: 0...359)
-                            .frame(width: 220)
                             .disabled(camera.centerCoordinateDistance > 1_100_000)
                     }
                     
-                    HStack{
-                        Text("Pitch").font(.headline)
+                    HStack {
+                        HStack {
+                            Text("Pitch").font(.headline)
+                            Spacer(minLength: 8)
+                            Text("\(Int(camera.pitch))º")
+                                .font(.body.monospacedDigit())
+                                .opacity(0.6)
+                        }
+                        .frame(width: 110)
                         
-                        Spacer(minLength: 16)
-                        
-                        Text("\(Int(camera.pitch))º")
-                            .font(.body.monospacedDigit())
-                            .opacity(0.6)
                         Slider(value: $camera.pitch, in: 0...35)
-                            .frame(width: 220)
                     }
                     
                     HStack {
-                        Text("Zoom").font(.headline)
+                        HStack {
+                            Text("Zoom").font(.headline)
+                            Spacer(minLength: 8)
+                            Text(distance)
+                                .font(.body.monospacedDigit())
+                                .opacity(0.6)
+                        }
+                        .frame(width: 110)
                         
-                        Spacer(minLength: 16)
-                        
-                        Text(distance)
-                            .font(.body.monospacedDigit())
-                            .opacity(0.6)
-                        
-                        Slider(value: $camera.centerCoordinateDistance, in: 1000...3_000_000)
-                            .frame(width: 220)
+                        Slider(
+                            value: $camera.centerCoordinateDistance,
+                            in: 1000...3_000_000
+                        )
                     }
                 }
                 .padding([.horizontal, .bottom])
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.5)
             } header: {
                 Text("Camera")
                     .font(.title3.bold())
@@ -216,20 +220,19 @@ struct MapKitExample: View {
                         ForEach(annotations, id: \.hash){ annotation in
                             HStack(spacing: 1) {
                                 Button(action: { toggle(annotation) }){
-                                    HStack {
-                                        VStack {
-                                            if let t = annotation.title, let t {
-                                                Text(t)
-                                            }
-                                            
-                                            if let t = annotation.subtitle, let t {
-                                                Text(t)
-                                            }
+                                    VStack(alignment: .leading) {
+                                        if let title = annotation.title as? String {
+                                            Text(title)
+                                        }
+                                        
+                                        if let subtitle = annotation.subtitle as? String {
+                                            Text(subtitle)
+                                                .font(.footnote)
+                                                .opacity(0.5)
                                         }
                                     }
                                     .lineLimit(1)
                                     .padding(10)
-                                    .padding(.leading, 10)
                                     .background(
                                         isSelected(annotation) ? .accentColor : Color.secondary.opacity(0.2)
                                     )
@@ -255,13 +258,16 @@ struct MapKitExample: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
                     }
+                    .animation(.smooth, value: annotations.count)
                     .buttonStyle(.plain)
                     .padding([.horizontal, .bottom])
                 }
             } header: {
                 Text("Annotations")
-                    .font(.headline)
+                    .font(.title3.bold())
                     .padding()
+                
+                //Text("\(selected.count)")
             }
         }
         
@@ -272,6 +278,7 @@ struct MapKitExample: View {
 
 #Preview("MapKit Example") {
     MapKitExample()
+        .previewSize()
 }
 
 

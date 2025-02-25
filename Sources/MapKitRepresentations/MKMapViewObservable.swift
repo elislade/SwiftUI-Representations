@@ -28,6 +28,14 @@ public class MKMapViewObservable: MKMapView, ObservableObject {
         willSet { objectWillChange.send() }
     }
     
+    public override var userTrackingMode: MKUserTrackingMode {
+        willSet { objectWillChange.send() }
+    }
+    
+    
+    // MARK: - Enabled Features
+    
+    
     public override var isZoomEnabled: Bool {
         willSet { objectWillChange.send() }
     }
@@ -43,6 +51,10 @@ public class MKMapViewObservable: MKMapView, ObservableObject {
     public override var isPitchEnabled: Bool {
         willSet { objectWillChange.send() }
     }
+    
+    
+    // MARK: - Interface Visibility
+    
     
     public override var showsUserTrackingButton: Bool {
         willSet { objectWillChange.send() }
@@ -72,41 +84,74 @@ public class MKMapViewObservable: MKMapView, ObservableObject {
         willSet { objectWillChange.send() }
     }
     
-    public override var userTrackingMode: MKUserTrackingMode {
-        willSet { objectWillChange.send() }
+    
+    // MARK: - Camera
+    
+    
+    public override func setCameraZoomRange(_ cameraZoomRange: MKMapView.CameraZoomRange?, animated: Bool) {
+        objectWillChange.send()
+        super.setCameraZoomRange(cameraZoomRange, animated: animated)
     }
+    
+    public override func setCameraBoundary(_ cameraBoundary: MKMapView.CameraBoundary?, animated: Bool) {
+        objectWillChange.send()
+        super.setCameraBoundary(cameraBoundary, animated: animated)
+    }
+    
+    public override func setCamera(_ camera: MKMapCamera, animated: Bool) {
+        objectWillChange.send()
+        super.setCamera(camera, animated: animated)
+    }
+    
+    public var cameraBinding: Binding<MKMapCamera> {
+        .init(
+            get: { [unowned self] in camera },
+            set: { [unowned self] new, transaction in
+                setCamera(new, animated: transaction.animation != nil)
+            }
+        )
+    }
+    
+    
+    // MARK: - Annotations
+    
     
     public override var selectedAnnotations: [any MKAnnotation] {
         willSet { objectWillChange.send() }
     }
     
-    public var cameraBinding: Binding<MKMapCamera> {
-        .init(get: { [camera] in camera }, set: { [unowned self] new in
-            objectWillChange.send()
-            setCamera(camera, animated: false)
-        })
+    public override func addAnnotation(_ annotation: any MKAnnotation) {
+        objectWillChange.send()
+        super.addAnnotation(annotation)
+    }
+    
+    public override func removeAnnotation(_ annotation: any MKAnnotation) {
+        objectWillChange.send()
+        super.removeAnnotation(annotation)
+    }
+    
+    public override func selectAnnotation(_ annotation: any MKAnnotation, animated: Bool) {
+        objectWillChange.send()
+        super.selectAnnotation(annotation, animated: animated)
+    }
+    
+    public override func deselectAnnotation(_ annotation: (any MKAnnotation)?, animated: Bool) {
+        objectWillChange.send()
+        super.deselectAnnotation(annotation, animated: animated)
     }
     
     public var annotationsBinding: Binding<[any MKAnnotation]> {
         .init(
-            get: { [annotations] in annotations },
-            set: { [unowned self] new in
-                objectWillChange.send()
-                
-                let diff = new.difference(from: annotations, by: { $0.hash == $1.hash })
+            get: { [unowned self] in annotations },
+            set: { [unowned self] new, transaction in
+                let changes = new.difference(from: annotations, by: { $0.hash == $1.hash })
 
-                for change in diff.insertions {
+                for change in changes {
                     switch change {
-                    case let .insert(_, element, _): addAnnotation(element)
-                    case .remove: continue
-                    }
-                }
-                
-                for change in diff.removals {
-                    switch change {
-                    case .insert: continue
+                    case let .insert(_, element, _):
+                        addAnnotation(element)
                     case let .remove(_, element, _):
-                        deselectAnnotation(element, animated: false)
+                        deselectAnnotation(element, animated: transaction.animation != nil)
                         removeAnnotation(element)
                     }
                 }
