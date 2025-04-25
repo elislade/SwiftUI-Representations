@@ -1,4 +1,4 @@
-#if canImport(UIKit)
+#if canImport(SafariServices) && !os(macOS) && !os(tvOS)
 
 import SwiftUI
 import SafariServices
@@ -10,14 +10,14 @@ public struct SFSafariViewControllerRepresentation {
     let configuration: SFSafariViewController.Configuration
     let preferredBarTintColor: UIColor?
     let preferredControlTintColor: UIColor?
-    let dismissButtonStyle: SFSafariViewController.DismissButtonStyle
-
+    let dismissButtonStyle: DismissButtonStyle
+    
     public init(
         url: URL,
         configuration: SFSafariViewController.Configuration = .init(),
         preferredBarTintColor: UIColor? = nil,
         preferredControlTintColor: UIColor? = nil,
-        dismissButtonStyle: SFSafariViewController.DismissButtonStyle = .close,
+        dismissButtonStyle: DismissButtonStyle = .close,
         didFinish: @escaping () -> Void = {}
     ) {
         self.url = url
@@ -29,15 +29,17 @@ public struct SFSafariViewControllerRepresentation {
     }
     
     private func sync(ctrl: SFSafariViewController, ctx: Context){
+        #if !os(visionOS)
         ctrl.preferredBarTintColor = preferredBarTintColor
         ctrl.preferredControlTintColor = preferredControlTintColor
         ctrl.dismissButtonStyle = dismissButtonStyle
+        #endif
     }
+    
+    #if !os(visionOS)
     
     public class Coordinator: NSObject, SFSafariViewControllerDelegate {
         let didFinish: (() -> Void)?
-        
-        //var prewarmedTokens: [AnyObject] = []
         
         public init(_ didFinish: @escaping () -> Void) {
             self.didFinish = didFinish
@@ -52,6 +54,7 @@ public struct SFSafariViewControllerRepresentation {
         Coordinator(didFinish)
     }
     
+    #endif
 }
 
 
@@ -59,7 +62,9 @@ extension SFSafariViewControllerRepresentation: UIViewControllerRepresentable {
     
     public func makeUIViewController(context: Context) -> SFSafariViewController {
         let c = SFSafariViewController(url: url, configuration: configuration)
+        #if !os(visionOS)
         c.delegate = context.coordinator
+        #endif
         sync(ctrl: c, ctx: context)
         return c
     }

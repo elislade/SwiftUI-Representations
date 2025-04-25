@@ -1,4 +1,4 @@
-#if canImport(UIKit) || targetEnvironment(macCatalyst)
+#if (canImport(UIKit) || targetEnvironment(macCatalyst)) && !os(watchOS)
 
 import UIKit
 

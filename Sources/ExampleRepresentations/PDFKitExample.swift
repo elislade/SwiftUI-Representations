@@ -16,8 +16,8 @@ struct PDFKitExample: View {
             
             VStack(spacing: 16) {
                 HStack(spacing: 0) {
-                    Button(action: { view.goToPreviousPage(nil) }){
-                        Image(systemName: "arrow.left")
+                    Button{ view.goToPreviousPage(nil) } label: {
+                        Label("Previous Page", systemImage: "arrow.left")
                             .font(.system(size: 28).bold())
                     }
                     .disabled(!view.canGoToPreviousPage)
@@ -33,15 +33,18 @@ struct PDFKitExample: View {
                         Text("\(view.pageCount)")
                             .font(.body.weight(.bold).monospacedDigit())
                     }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(Text("Page"))
                     
                     Spacer(minLength: 10)
                     
-                    Button(action: { view.goToNextPage(nil) }){
-                        Image(systemName: "arrow.right")
+                    Button{ view.goToNextPage(nil) } label: {
+                        Label("Next Page", systemImage: "arrow.right")
                             .font(.system(size: 28).bold())
                     }
                     .disabled(!view.canGoToNextPage)
                 }
+                .labelStyle(.iconOnly)
             }
             .padding()
         }
@@ -51,4 +54,5 @@ struct PDFKitExample: View {
 
 #Preview("PDFKit Example"){
     PDFKitExample()
+        .previewSize()
 }

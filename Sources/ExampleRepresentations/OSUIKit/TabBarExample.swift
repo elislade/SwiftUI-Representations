@@ -92,4 +92,5 @@ extension OSViewController {
 
 #Preview("TabBar Example") {
     TabBarExample()
+        .previewSize()
 }

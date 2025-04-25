@@ -8,7 +8,7 @@ public struct UIVisualEffectViewRepresentation: UIViewRepresentable {
     
     let effect: UIVisualEffect
     
-    public init(effect: UIVisualEffect = UIBlurEffect(style: .systemMaterial)){
+    public init(effect: UIVisualEffect = UIBlurEffect(style: .regular)){
         self.effect = effect
     }
     

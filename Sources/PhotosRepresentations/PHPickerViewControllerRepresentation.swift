@@ -1,3 +1,4 @@
+#if os(iOS) || os(macOS)
 import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
@@ -67,5 +68,7 @@ extension PHPickerViewControllerRepresentation: NSViewControllerRepresentable {
     public func updateNSViewController(_ nsViewController: PHPickerViewController, context: Context) { }
     
 }
+
+#endif
 
 #endif

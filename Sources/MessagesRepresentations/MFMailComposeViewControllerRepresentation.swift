@@ -1,6 +1,6 @@
 import SwiftUI
 
-#if canImport(UIKit)
+#if canImport(MessageUI)
 import MessageUI
 
 public struct MFMailComposeViewControllerRepresentation {

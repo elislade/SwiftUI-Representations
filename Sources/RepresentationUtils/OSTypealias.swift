@@ -40,7 +40,7 @@
         }
     }
 
-#elseif canImport(UIKit) && canImport(SwiftUI)
+#elseif canImport(UIKit) && canImport(SwiftUI) && !os(watchOS)
 
     import SwiftUI
     import UIKit
@@ -169,14 +169,19 @@
     public typealias OSRotationGestureRecognizer = NSRotationGestureRecognizer
     public typealias OSMagnificationGestureRecognizer = NSMagnificationGestureRecognizer
 
-#elseif canImport(UIKit)
+#elseif canImport(UIKit) && !os(watchOS)
 
     import UIKit
     public typealias OSGestureRecognizer = UIGestureRecognizer
     public typealias OSTapGestureRecognizer = UITapGestureRecognizer
     public typealias OSPanGestureRecognizer = UIPanGestureRecognizer
+    #if os(tvOS)
+    public typealias OSRotationGestureRecognizer = Never
+    public typealias OSMagnificationGestureRecognizer = Never
+    #else
     public typealias OSRotationGestureRecognizer = UIRotationGestureRecognizer
     public typealias OSMagnificationGestureRecognizer = UIPinchGestureRecognizer
+    #endif
 
 #else
 

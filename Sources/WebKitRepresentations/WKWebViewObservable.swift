@@ -1,3 +1,5 @@
+#if canImport(WebKit)
+
 import WebKit
 import Combine
 
@@ -100,3 +102,5 @@ public class WKWebViewObservable: WKWebView, ObservableObject {
     }
     
 }
+
+#endif

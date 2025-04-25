@@ -69,9 +69,11 @@ public class AVPlayerObservable: AVPlayer, ObservableObject {
         willSet { objectWillChange.send() }
     }
     
+    #if !os(visionOS)
     public override var allowsExternalPlayback: Bool {
         willSet { objectWillChange.send() }
     }
+    #endif
     
     public func timeStream(atInterval interval: TimeInterval) -> AsyncStream<Double> {
         AsyncStream { [unowned self] continuation in

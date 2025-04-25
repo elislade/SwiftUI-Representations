@@ -10,10 +10,6 @@ struct MapKitExample: View {
     
     private let bottomHeight: CGFloat = 280
     
-    private var backgroundView: some View {
-        Rectangle().fill(.bar)
-    }
-    
     var body: some View {
         ZStack(alignment: .bottom) {
             OSViewRepresentation(view)
@@ -34,11 +30,8 @@ struct MapKitExample: View {
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0){
-                        ControlsSection(
-                            showCompass: $view.showsCompass,
-                            showScale: $view.showsScale,
-                            showLocation: $view.showsUserLocation,
-                            showTraffic: $view.showsTraffic
+                        UIVisibilitySection(
+                            elements: $view.visibleUIElements
                         )
                         
                         Divider()
@@ -56,7 +49,11 @@ struct MapKitExample: View {
                 }
             }
             .frame(height: bottomHeight)
-            .background(backgroundView.ignoresSafeArea())
+            .background{
+                Rectangle()
+                    .fill(.regularMaterial)
+                    .ignoresSafeArea()
+            }
             .preferredColorScheme(view.mapType == .standard ? .light : .dark)
         }
     }
@@ -80,31 +77,43 @@ struct MapKitExample: View {
     }
     
     
-    struct ControlsSection: View {
+    struct UIVisibilitySection: View {
         
-        @Binding var showCompass: Bool
-        @Binding var showScale: Bool
-        @Binding var showLocation: Bool
-        @Binding var showTraffic: Bool
+        @Binding var elements: MapUIElements
+       
+        private func bind(_ element: MapUIElements) -> Binding<Bool> {
+            .init(
+                get: { elements.contains(element) },
+                set: {
+                    if $0 {
+                        elements.insert(element)
+                    } else {
+                        elements.remove(element)
+                    }
+                }
+            )
+        }
         
         var body: some View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("UI Visibility")
                     .font(.title3.bold())
                 
-                Toggle(isOn: $showCompass){
+                #if !os(tvOS)
+                Toggle(isOn: bind(.compass)){
                     Text("Compass").font(.headline)
                 }
+                #endif
                 
-                Toggle(isOn: $showScale){
+                Toggle(isOn: bind(.scale)){
                     Text("Scale").font(.headline)
                 }
                 
-                Toggle(isOn: $showLocation){
+                Toggle(isOn: bind(.userLocation)){
                     Text("User Location").font(.headline)
                 }
                 
-                Toggle(isOn: $showTraffic){
+                Toggle(isOn:bind(.traffic)){
                     Text("Traffic").font(.headline)
                 }
             }

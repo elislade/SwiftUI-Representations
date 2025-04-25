@@ -29,7 +29,7 @@ class CollectionView: UICollectionView {
     }
 }
 
-@available(iOS 16, *)
+@available(iOS 16, tvOS 16.0, *)
 public final class HostingCollectionViewController : UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
     
     

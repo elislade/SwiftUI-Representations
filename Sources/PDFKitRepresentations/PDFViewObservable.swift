@@ -3,7 +3,7 @@ import Combine
 import RepresentationUtils
 
 
-public class PDFViewObservable: PDFView, ObservableObject {
+public final class PDFViewObservable: PDFView, ObservableObject {
     
     public init(){
         super.init(frame: .zero)

@@ -22,7 +22,7 @@ extension CALayerRepresentation: UIViewRepresentable {
 
     public func updateUIView(_ uiView: CALayerHostView, context: Context) { }
     
-    @available(iOS 16.0, tvOS 16.0, watchOS 9.0, *)
+    @available(iOS 16.0, tvOS 16.0, *)
     public func sizeThatFits(_ proposal: ProposedViewSize, uiView: CALayerHostView, context: Context) -> CGSize? {
         return uiView.hostedLayer.preferredFrameSize()
     }

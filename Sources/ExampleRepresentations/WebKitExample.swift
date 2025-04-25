@@ -1,6 +1,7 @@
 import WebKitRepresentations
 import RepresentationUtils
 
+#if canImport(WebKit)
 
 struct WebKitExample: View {
     
@@ -11,79 +12,111 @@ struct WebKitExample: View {
     @State private var addressField = ""
   
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(view.title ?? "")
-                
-                if view.hasOnlySecureContent {
-                    Text("-")
-                    Image(systemName: "lock.fill")
-                        .opacity(0.4)
-                }
-            }
-            .font(.caption.weight(.semibold))
-            .lineLimit(1)
-            .padding(8)
-            
-            Divider().ignoresSafeArea()
-            
+        GeometryReader { proxy in
             OSViewRepresentation(view)
-                .onAppear{
+                .ignoresSafeArea()
+                .onAppear {
                     view.allowsBackForwardNavigationGestures = true
-                    view.load(.url(.googleWebSite))
+                    #if canImport(UIKit)
+                    view.scrollView.contentInsetAdjustmentBehavior = .never
+                    view.scrollView.contentInset.top =  proxy.safeAreaInsets.top
+                    view.scrollView.contentInset.bottom =  proxy.safeAreaInsets.bottom
+                    #endif
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        view.load(.url(.googleWebSite))
+                    }
                 }
                 .onChange(of: view.url){
                     addressField = $0?.absoluteString ?? ""
                 }
-            
-            Divider().ignoresSafeArea()
-            
+        }
+        .safeAreaInset(edge: .top, spacing: 0){
             VStack(spacing: 0) {
+                HStack {
+                    Text(view.title ?? "")
+                    
+                    if view.hasOnlySecureContent {
+                        Text("-")
+                        Image(systemName: "lock.fill")
+                            .opacity(0.4)
+                    }
+                }
+                .padding(8)
+                
+                Divider().ignoresSafeArea()
+            }
+            .font(.caption.weight(.semibold))
+            .lineLimit(1)
+            .frame(maxWidth: .infinity)
+            .background(.regularMaterial)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0){
+            VStack(spacing: 0) {
+                Divider().ignoresSafeArea()
+                
                 if view.isLoading {
                     Rectangle()
                         .fill(.blue)
+                        .ignoresSafeArea()
                         .frame(height: 5)
                         .scaleEffect(x: view.estimatedProgress, anchor: .leading)
                 }
                 
                 HStack(spacing: 14) {
-                    Button("Back", systemImage: "chevron.left"){
-                        view.goBack()
+                    HStack {
+                        Button{ view.goBack() } label: {
+                            Label("Back", systemImage: "chevron.left")
+                        }
+                        .disabled(!view.canGoBack)
+                        
+                        Button{ view.goForward() } label: {
+                            Label("Forward", systemImage: "chevron.right")
+                        }
+                        .disabled(!view.canGoForward)
                     }
-                    .disabled(!view.canGoBack)
+                    .labelStyle(.iconOnly)
                     
-                    Button("Forward", systemImage: "chevron.right"){
-                        view.goForward()
-                    }
-                    .disabled(!view.canGoForward)
-                    
-                    TextField("Location", text: $addressField, onCommit: {
-                        if let url = URL(string: addressField){
-                            if url.scheme != nil {
-                                view.load(.url(url))
-                            } else if let url = URL(string: "https://" + addressField){
-                                view.load(.url(url))
+                    TextField("Location", text: $addressField)
+                        .autocorrectionDisabled()
+                        #if !os(macOS)
+                        .keyboardType(.webSearch)
+                        #endif
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit {
+                            if let url = URL(string: addressField){
+                                if url.scheme != nil {
+                                    view.load(.url(url))
+                                } else if let url = URL(string: "https://" + addressField){
+                                    view.load(.url(url))
+                                }
                             }
                         }
-                    })
-                    //.autocapitalization(.none)
-                    .autocorrectionDisabled()
-                    //.textFieldStyle(.roundedBorder)
                     
-                    Button("Zoom Out", systemImage: "minus.magnifyingglass"){
-                        view.pageZoom -= 0.1
-                    }
-                    
-                    Button("Zoom In", systemImage: "plus.magnifyingglass"){
-                        view.pageZoom += 0.1
+                    Menu {
+                        Button{ view.pageZoom -= 0.1 } label : {
+                            Label("Zoom Out", systemImage: "minus.magnifyingglass")
+                        }
+                        .labelStyle(.titleAndIcon)
+                        
+                        Button{ view.pageZoom += 0.1 } label : {
+                            Label("Zoom In", systemImage: "plus.magnifyingglass")
+                        }
+                        .labelStyle(.titleAndIcon)
+                    } label: {
+                        Label("Menu", systemImage: "ellipsis")
+                            #if os(macOS)
+                            .labelStyle(.titleOnly)
+                            #else
+                            .labelStyle(.iconOnly)
+                            #endif
                     }
                 }
                 .padding()
-                .labelStyle(.iconOnly)
-                .imageScale(.large)
             }
             .animation(.smooth, value: view.estimatedProgress)
             .animation(.smooth, value: view.isLoading)
+            .background(.bar)
         }
     }
 
@@ -92,6 +125,7 @@ struct WebKitExample: View {
 
 #Preview("WebKit Example") {
     WebKitExample()
+        .previewSize()
 }
 
 
@@ -106,3 +140,5 @@ extension WKWebViewConfiguration {
     }
     
 }
+
+#endif

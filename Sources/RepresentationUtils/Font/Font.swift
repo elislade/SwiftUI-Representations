@@ -204,7 +204,16 @@ public extension Font.TextStyle {
     
     var osTextStyle: OSFont.TextStyle {
         switch self {
-        case .largeTitle: return .largeTitle
+        case .largeTitle:
+            #if os(tvOS)
+            if #available(tvOS 17.0, *) {
+                return .extraLargeTitle
+            } else {
+                return .title1
+            }
+            #else
+            return .largeTitle
+            #endif
         case .title: return .title1
         case .title2: return .title2
         case .title3: return .title3
@@ -216,7 +225,13 @@ public extension Font.TextStyle {
         case .caption: return .caption1
         case .caption2: return .caption2
         case .extraLargeTitle:
-            #if canImport(UIKit)
+            #if os(tvOS)
+            if #available(tvOS 17.0, *) {
+                return .extraLargeTitle
+            } else {
+                return  .title1
+            }
+            #elseif canImport(UIKit)
             if #available(iOS 17.0, *) {
                 return .extraLargeTitle
             } else {
@@ -226,7 +241,13 @@ public extension Font.TextStyle {
             return .largeTitle
             #endif
         case .extraLargeTitle2:
-            #if canImport(UIKit)
+            #if os(tvOS)
+            if #available(tvOS 17.0, *) {
+                return .extraLargeTitle2
+            } else {
+                return  .title1
+            }
+            #elseif canImport(UIKit)
             if #available(iOS 17.0, *) {
                 return .extraLargeTitle2
             } else {

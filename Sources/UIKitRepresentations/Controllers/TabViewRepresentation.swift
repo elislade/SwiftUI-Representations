@@ -32,9 +32,13 @@ public struct TabViewRepresentation {
 
 public final class CustomTabBarController: UIViewController {
     
+    #if !os(tvOS)
     public override var childForStatusBarStyle: UIViewController? { nil }
+    #endif
     
+    #if !os(visionOS) && !os(tvOS)
     public override func setNeedsStatusBarAppearanceUpdate() { }
+    #endif
     
     public var selectedIndex: Int = 0 {
         willSet {
@@ -87,7 +91,7 @@ extension TabViewRepresentation: UIViewControllerRepresentable {
         let ctrl = UITabBarController()
         ctrl.view.backgroundColor = .clear
         ctrl.setViewControllers(tabs, animated: false)
-        if #available(iOS 18.0, *) {
+        if #available(iOS 18.0, tvOS 18.0, visionOS 2.0, *) {
             ctrl.isTabBarHidden = true
         }
         ctrl.tabBar.isHidden = true
@@ -105,7 +109,7 @@ extension TabViewRepresentation: UIViewControllerRepresentable {
 public final class CustomTabBarController: NSViewController {
     
     public var selectedIndex: Int = 0 {
-        willSet { newValue
+        willSet {
             guard
                 newValue != selectedIndex,
                 children.indices.contains(selectedIndex),

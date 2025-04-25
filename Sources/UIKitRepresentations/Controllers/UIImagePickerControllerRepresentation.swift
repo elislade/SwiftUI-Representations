@@ -1,4 +1,4 @@
-#if canImport(UIKit)
+#if canImport(UIKit) && !os(tvOS)
 
 import SwiftUI
 
@@ -8,7 +8,7 @@ public struct UIImagePickerControllerRepresentation {
     let picked: (UIImage?) -> Void
     
     public init(
-        sourceType: UIImagePickerController.SourceType = .camera,
+        sourceType: UIImagePickerController.SourceType,
         picked: @escaping (UIImage?) -> Void
     ) {
         self.sourceType = sourceType

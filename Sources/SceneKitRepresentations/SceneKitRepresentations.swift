@@ -3,7 +3,7 @@
 @_exported import RepresentationUtils
 
 
-#if os(iOS)
+#if os(iOS) || os(visionOS) || os(tvOS)
 public typealias SCNFloat = Float
 #elseif os(macOS)
 public typealias SCNFloat = CGFloat

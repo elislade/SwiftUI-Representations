@@ -1,12 +1,12 @@
 import SafariRepresentations
 
-#if canImport(UIKit)
+#if canImport(UIKit) && !os(tvOS)
 
 struct SafariExample: View {
     
     @State private var controlTint: CGColor = .init(red: 0, green: 0.3, blue: 0.8, alpha: 1)
     @State private var barTint: CGColor = .init(gray: 1, alpha: 1)
-    @State private var dismissStyle: SFSafariViewController.DismissButtonStyle = .cancel
+    @State private var dismissStyle: DismissButtonStyle = .cancel
     
     @State private var isShown = false
     
@@ -14,10 +14,11 @@ struct SafariExample: View {
         VStack(spacing: 0) {
             ZStack {
                 Color.secondary
-                    //.ignoresSafeArea()
                     .opacity(0.5)
                 
-                Button("Show"){ isShown = true }
+                Button{ isShown = true } label: {
+                    Text("Show")
+                }
                 
                 if isShown {
                     SFSafariViewControllerRepresentation(
@@ -52,13 +53,13 @@ struct SafariExample: View {
                     
                     Picker("", selection: $dismissStyle){
                         Text("Done")
-                            .tag(SFSafariViewController.DismissButtonStyle.done)
+                            .tag(DismissButtonStyle.done)
                         
                         Text("Close")
-                            .tag(SFSafariViewController.DismissButtonStyle.close)
+                            .tag(DismissButtonStyle.close)
                         
                         Text("Cancel")
-                            .tag(SFSafariViewController.DismissButtonStyle.cancel)
+                            .tag(DismissButtonStyle.cancel)
                     }
                 }
                 .padding()

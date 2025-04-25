@@ -103,7 +103,7 @@ struct HostedCollectionExample: View {
             .ignoresSafeArea()
         }
         .safeAreaInset(edge: .top, spacing: 0){
-            header.background(.bar)
+            header.background(.regularMaterial)
         }
 
     }
@@ -126,7 +126,7 @@ struct HostedCollectionExample: View {
             .lineLimit(1)
             .padding()
             .frame(maxWidth: .infinity)
-            .background(.bar)
+            .background(.regularMaterial)
             .sheet(isPresented: $isPresented){
                 if #available(iOS 16.4, macOS 13.3, tvOS 16.4, watchOS 9.4, *) {
                     SectionLayoutEditor(layout: $section.layout)
@@ -284,6 +284,7 @@ struct HostedCollectionExample: View {
 @available(iOS 16, macOS 12, *)
 #Preview("Hosted Collection Example") {
     HostedCollectionExample()
+        .previewSize()
 }
 
 

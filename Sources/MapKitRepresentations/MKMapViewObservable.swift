@@ -1,4 +1,4 @@
-import WebKit
+import MapKit
 import Combine
 import RepresentationUtils
 
@@ -9,7 +9,7 @@ public class MKMapViewObservable: MKMapView, ObservableObject {
         willSet { objectWillChange.send() }
     }
     
-    #if canImport(UIKit)
+    #if os(iOS)
     @available(iOS 16.0, *)
     public override var selectableMapFeatures: MKMapFeatureOptions {
         willSet { objectWillChange.send() }
@@ -44,6 +44,8 @@ public class MKMapViewObservable: MKMapView, ObservableObject {
         willSet { objectWillChange.send() }
     }
     
+    #if !os(tvOS)
+    
     public override var isRotateEnabled: Bool {
         willSet { objectWillChange.send() }
     }
@@ -52,6 +54,7 @@ public class MKMapViewObservable: MKMapView, ObservableObject {
         willSet { objectWillChange.send() }
     }
     
+    #endif
     
     // MARK: - Interface Visibility
     
@@ -64,9 +67,34 @@ public class MKMapViewObservable: MKMapView, ObservableObject {
         willSet { objectWillChange.send() }
     }
     
+    public var visibleUIElements: MapUIElements {
+        get {
+            var result = MapUIElements()
+            #if !os(tvOS)
+            if showsCompass { result.insert(.compass) }
+            #endif
+            if showsScale { result.insert(.scale) }
+            if showsBuildings { result.insert(.buildings) }
+            if showsTraffic { result.insert(.traffic) }
+            if showsUserLocation { result.insert(.userLocation) }
+            return result
+        }
+        set {
+            showsScale = newValue.contains(.scale)
+            #if !os(tvOS)
+            showsCompass = newValue.contains(.compass)
+            #endif
+            showsBuildings = newValue.contains(.buildings)
+            showsTraffic = newValue.contains(.traffic)
+            showsUserLocation = newValue.contains(.userLocation)
+        }
+    }
+    
+    #if !os(tvOS)
     public override var showsCompass: Bool {
         willSet { objectWillChange.send() }
     }
+    #endif
     
     public override var showsScale: Bool {
         willSet { objectWillChange.send() }
@@ -160,4 +188,21 @@ public class MKMapViewObservable: MKMapView, ObservableObject {
     }
     
 
+}
+
+
+public struct MapUIElements: OptionSet, Hashable, Sendable {
+    
+    public let rawValue: Int8
+    
+    public init(rawValue: Int8) {
+        self.rawValue = rawValue
+    }
+    
+    public static let compass: MapUIElements = .init(rawValue: 1 << 0)
+    public static let scale: MapUIElements = .init(rawValue: 1 << 1)
+    public static let buildings: MapUIElements = .init(rawValue: 1 << 2)
+    public static let traffic: MapUIElements = .init(rawValue: 1 << 3)
+    public static let userLocation: MapUIElements = .init(rawValue: 1 << 4)
+    
 }

@@ -4,7 +4,7 @@ import AVKitRepresentations
 
 struct AVKitExample: View  {
     
-    @StateObject var player: AVPlayerObservable = AVPlayerObservable(url: .eliSladeProfilePosesVideo)
+    @StateObject var player = AVPlayerObservable(url: .eliSladeProfilePosesVideo)
     
     @State private var time: Double = 0
     @State private var duration: Double = 0.1

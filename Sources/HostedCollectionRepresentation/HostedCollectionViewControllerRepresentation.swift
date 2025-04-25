@@ -57,7 +57,7 @@ public struct HostedCollectionRepresentation {
 
 #if canImport(UIKit) || targetEnvironment(macCatalyst)
 
-@available(iOS 16, *)
+@available(iOS 16, tvOS 16.0, *)
 extension HostedCollectionRepresentation : UIViewControllerRepresentable {
     
     public func makeUIViewController(context: Context) -> HostingCollectionViewController {

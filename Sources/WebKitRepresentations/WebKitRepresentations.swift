@@ -1,7 +1,9 @@
 @_exported import SwiftUI
-@_exported import WebKit
 @_exported import RepresentationUtils
 
+#if canImport(WebKit)
+@_exported import WebKit
+#endif
 
 public typealias WKWebViewRepresentation = RepresentationUtils.OSViewRepresentation
 
