@@ -3,74 +3,108 @@ import SceneKitRepresentations
 
 struct SceneKitExample: View {
     
-    @State private var cameraControls = false
-    @State private var options: SCNDebugOptions = []
-    
-    private func binding(for options: SCNDebugOptions) -> Binding<Bool> {
-        .init(
-            get: { self.options.contains(options) },
-            set: {
-                if $0 {
-                    self.options.insert(options)
-                } else {
-                    self.options.remove(options)
-                }
-            }
-        )
-    }
-    
+    @StateObject private var sceneView = SCNViewObservable()
     
     var body: some View {
         VStack(spacing: 0) {
-            SCNViewRepresentation(
-                scene: .sphereExample,
-                debugOptions: options,
-                allowsCameraControl: cameraControls
-            )
+            OSViewRepresentation(sceneView)
+                .onAppear{
+                    sceneView.scene = .sphereExample
+                    sceneView.backgroundColor = .clear
+                }
             
             Divider()
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 0){
-                    Toggle(isOn: $cameraControls){
+                    Toggle(isOn: $sceneView.allowsCameraControl){
                         Text("Camera Controls").font(.headline)
                     }
                     .padding()
                     
                     Divider()
                     
-                    Toggle(isOn: binding(for: .renderAsWireframe)){
-                        Text("Wireframe").font(.headline)
+                    Toggle(isOn: $sceneView.showsStatistics){
+                        Text("Shows Statistics").font(.headline)
                     }
                     .padding()
                     
                     Divider()
                     
-                    Toggle(isOn: binding(for: .showBoundingBoxes)){
-                        Text("Bounding Boxes").font(.headline)
+                    Toggle(isOn: $sceneView.isJitteringEnabled){
+                        Text("Jitter Enabled").font(.headline)
                     }
                     .padding()
                     
                     Divider()
                     
-                    Toggle(isOn: binding(for: .showLightExtents)){
-                        Text("Light Extents").font(.headline)
-                    }
-                    .padding()
+                    DebugOptionsView(options: $sceneView.debugOptions)
                     
                     Divider()
                 }
             }
         }
         .preferredColorScheme(.dark)
-        .background(
+        .background{
             LinearGradient(
                 colors: [Color(white: 0.15), Color(white: 0.05)],
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
-        )
+        }
+    }
+    
+    
+    struct DebugOptionsView: View {
+        
+        @Binding var options: SCNDebugOptions
+        
+        private func binding(for options: SCNDebugOptions) -> Binding<Bool> {
+            .init(
+                get: { self.options.contains(options) },
+                set: {
+                    if $0 {
+                        self.options.insert(options)
+                    } else {
+                        self.options.remove(options)
+                    }
+                }
+            )
+        }
+        
+        var body: some View {
+            Text("DEBUG OPTIONS")
+                .padding([.top, .leading])
+                .padding(.bottom, 5)
+                .font(.caption)
+                .opacity(0.6)
+                
+            Divider()
+            
+            Toggle(isOn: binding(for: .renderAsWireframe)){
+                Text("Wireframe").font(.headline)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            
+            Divider()
+            
+            Toggle(isOn: binding(for: .showBoundingBoxes)){
+                Text("Bounding Boxes").font(.headline)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            
+            Divider()
+            
+            Toggle(isOn: binding(for: .showLightExtents)){
+                Text("Light Extents").font(.headline)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+        }
+        
     }
     
 }
@@ -148,7 +182,7 @@ extension SCNScene {
 extension SCNAction {
     
     static func jiggle() -> SCNAction {
-        func adjust(_ key: ReferenceWritableKeyPath<SCNNode, SCNFloat>, isReversed: Bool = false) -> SCNAction {
+        func adjust(_ key: ReferenceWritableKeyPath<SCNNode, SCNFloat>) -> SCNAction {
             let duration = TimeInterval.random(in: 1...3)
             let action = SCNAction.customAction(duration: duration){ node, value in
                 let fraction = value / duration
@@ -166,7 +200,5 @@ extension SCNAction {
 
 #Preview("SceneKit Example") {
     SceneKitExample()
-    #if os(macOS)
-        .frame(width: 320, height: 480)
-    #endif
+        .previewSize()
 }
