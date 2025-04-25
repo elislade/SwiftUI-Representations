@@ -18,7 +18,12 @@ extension ActivityIndicatorViewRepresentation: UIViewRepresentable {
     }
     
     public func updateUIView(_ uiView: UIActivityIndicatorView, context: Context) {
-        
+        #if !os(tvOS)
+        switch context.environment.controlSize {
+        case .large, .extraLarge: uiView.style = .large
+        default: uiView.style = .medium
+        }
+        #endif
     }
     
 }
@@ -30,6 +35,7 @@ extension ActivityIndicatorViewRepresentation : NSViewRepresentable {
     public func makeNSView(context: Context) -> NSProgressIndicator {
         let view = NSProgressIndicator()
         view.startAnimation(nil)
+        view.style = .spinning
         return view
     }
     
