@@ -62,6 +62,10 @@ let package = Package(
         .library(
             name: "HostedCollectionRepresentation",
             targets: ["HostedCollectionRepresentation"]
+        ),
+        .library(
+            name: "DocumentPickerRepresentation",
+            targets: ["DocumentPickerRepresentation"]
         )
     ],
     targets: [
@@ -72,7 +76,7 @@ let package = Package(
                 "MessagesRepresentations", "SafariRepresentations", "PencilKitRepresentations",
                 "PDFKitRepresentations", "AVKitRepresentations", "SceneKitRepresentations",
                 "MapKitRepresentations", "WebKitRepresentations", "UIKitRepresentations",
-                "HostedCollectionRepresentation"
+                "HostedCollectionRepresentation", "DocumentPickerRepresentation"
             ]
         ),
         .target(name: "RepresentationUtils"),
@@ -104,6 +108,10 @@ let package = Package(
         ),
         .target(
             name: "HostedCollectionRepresentation",
+            dependencies: ["RepresentationUtils"]
+        ),
+        .target(
+            name: "DocumentPickerRepresentation",
             dependencies: ["RepresentationUtils"]
         )
     ]
