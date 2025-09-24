@@ -157,6 +157,8 @@ final class TabWrapperViewController: UIViewController {
         init(_ backing: UIView) {
             self.backing = backing
             super.init(frame: .zero)
+            backing.backgroundColor = .clear
+            backgroundColor = .clear
             addSubview(backing)
         }
         

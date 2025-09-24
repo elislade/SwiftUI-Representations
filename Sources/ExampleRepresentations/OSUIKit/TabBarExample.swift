@@ -12,7 +12,7 @@ struct TabBarExample: View {
     var body: some View {
         VStack(spacing: 0) {
             TabViewRepresentation(index: index){
-                Color.orange.ignoresSafeArea()
+                Color.orange
                 
                 ScrollView {
                     Text("Scroll Content")
@@ -32,7 +32,6 @@ struct TabBarExample: View {
                     .fill(.pink)
                     .padding()
             }
-            .edgesIgnoringSafeArea(.all)
             
             Divider().ignoresSafeArea()
             
@@ -62,6 +61,8 @@ struct TabBarExample: View {
             .buttonStyle(.plain)
             .padding()
         }
+        .background()
+        .environment(\.colorScheme, .dark)
     }
     
 }
